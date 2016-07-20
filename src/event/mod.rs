@@ -18,10 +18,18 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
-mod event;
+extern crate hyper;
+use std::time;
+mod crontime;
 
-fn main() {
-    let _e: event::Event;
+pub struct Event {
+    url:    hyper::Url,
+    period: time::Duration,
 
-    event::foo();
+}
+
+
+pub fn foo() {
+    let ct = crontime::CronTime::from_string("a b c d e");
+    println!("{:?}", ct);
 }
