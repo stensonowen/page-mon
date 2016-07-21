@@ -1,0 +1,48 @@
+use std::str::FromStr;
+
+grammar;
+
+pub Start: i32 = EntryA;
+
+pub EntryA: i32 = Entry EntryB;
+	
+
+pub Term: i32 = {
+    <n:Num> => n,
+    "(" <t:Term> ")" => t,
+};
+
+Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+
+EntryB: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+
+
+
+pub Entries = Comma<Entry>;
+
+Comma<Entry>: Vec<Entry> = {
+	//arbitrary-length list of ranges that are comma-separated
+	//trailing commas are forbidden in crontab
+	<e:Entry> <v:("," <Entry>)>	=> match v {
+        None => e,
+        Some(v) => {
+            let mut v = v;
+            v.pre(e);
+            v
+        }
+    }
+};
+
+
+//Entry: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+
+Entry = {
+	Special => 32,
+	Num,
+	<Num> "-" Num,
+};
+
+Special = <r"[*?LW#]">;
+
+	
+
