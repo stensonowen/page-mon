@@ -4,7 +4,7 @@ grammar;
 
 pub Start: i32 = EntryA;
 
-pub EntryA: i32 = Entry EntryB;
+pub EntryA: i32 = Entry EntryB => 42;
 	
 
 pub Term: i32 = {
@@ -24,25 +24,26 @@ Comma<Entry>: Vec<Entry> = {
 	//arbitrary-length list of ranges that are comma-separated
 	//trailing commas are forbidden in crontab
 	<e:Entry> <v:("," <Entry>)>	=> match v {
-        None => e,
-        Some(v) => {
-            let mut v = v;
-            v.pre(e);
-            v
-        }
+        _ => vec![42],
+        //None => 42,
+        //Some(v) => {
+        //    let mut v = v;
+        //    v.pre(e);
+        //    42
+        //}
     }
 };
 
 
 //Entry: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
 
-Entry = {
-	Special => 32,
-	Num,
-	<Num> "-" Num,
+Entry: i32 = {
+	Special         => 32,
+	Num             => 42,
+	<Num> "-" Num   => 42,
 };
 
-Special = <r"[*?LW#]">;
+Special: i32 = <r"[*?LW#]"> => 42;
 
 	
 
