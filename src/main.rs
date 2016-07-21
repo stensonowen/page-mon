@@ -36,5 +36,11 @@ fn main() {
     //assert!(croncfg::parse_Start("*/5").is_ok());
     //assert!(croncfg::parse_Start("#5").is_ok());
     //assert!(croncfg::parse_Start("* *").is_ok());
-    assert!(croncfg::parse_Start("* * * * * https://google.com").is_ok());
+    //
+    //assert!(croncfg::parse_Start("* * * * * *http://www.google.com").is_ok());
+    assert!(croncfg::parse_Start("1 2 3 4 5 https://google.com").is_ok());
+    println!("{:?}", croncfg::parse_Start("1 2 3 4 5 https://google.com").unwrap());
+    println!("{:?}", croncfg::parse_Start("1 * L 4-9 */4 https://duckduckgo.com").unwrap());
+    println!("{:?}", croncfg::parse_Start("1*2\t4*/4https://bing.com").unwrap());
+    println!("{:?}", croncfg::parse_Start("*****https://reddit.com").unwrap());
 }

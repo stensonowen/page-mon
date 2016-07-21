@@ -16,58 +16,42 @@ grammar;
 //     {Num     →   Num_ Num'               }much easier/more elegant to 
 //     {Num_    →   0  |  1  |  ...  |  9   } define numbers using the regex
 //     {Num'    →   Num  |  ε               } [0-9]+
+// 
+// Note about whitespace:
+//      LALRPOP does not treat whitespace as a token. Instead space and tab 
+//      represent sometimes-optional delmiiters. Therefore whitespace can
+//      be omitted when doing so would not cause ambiguity. 
+//      For example, `*****https://google.com` must mean that every field 
+//      is `*` (except the url), because `**` is never a valid token.
+//      Numbers, however, are an exception to this exception, as in
+//      `01234https://google.com`, `01234` will be treated as one number.
+//      I'm pretty sure the whitespace rule can be simplified to "whitespace
+//      is only necessary when it is between two digits".
+//      But again, whitespace is never problematic. That is to say, the 
+//      croncfg language includes every valid crontab line as well as 
+//      every version of that line in which removing whitespace did not
+//      introduce ambiguity.
+//
 
-
-//Url regex:    @^(https?|ftp)://[^\s/$.?#].[^\s]*$@iS
-//Url regex:    [0-9a-Z-\.]+
-
-//pub Start: u8 = Entries => 0;
-//pub Start: ast::Line = {
-//    <e0:Entries> Whitespace 
-//    <e1:Entries> Whitespace 
-//    <e2:Entries> Whitespace 
-//    <e3:Entries> Whitespace 
-//    <e4:Entries> Whitespace
-//    <u:Url> => 
-//        ast::Line {
-//            minute:     e0,
-//            hour:       e1,
-//            date:       e2,
-//            month:      e3,
-//            weekday:    e4,
-//            url:        u.to_owned(),
-//        }};
 
 pub Start: ast::Line = {
-    <e0:Entries> Whitespace 
-    <e1:Entries> //Whitespace 
-    <e2:Entries> 
-    <e3:Entries> 
-    <e4:Entries> 
-    <u:Url>  
-        =>
+    <e0:Entries> <e1:Entries> <e2:Entries> <e3:Entries> <e4:Entries> <u:Url> 
+        => 
         ast::Line {
-            minute:     e0.clone(),
-            hour:       e0.clone(),
-            date:       e0.clone(),
-            month:      e0.clone(),
-            weekday:    e0,
-            url:        "Hello world".to_string(),
-        }};
+            minute:     e0,
+            hour:       e1,
+            date:       e2,
+            month:      e3,
+            weekday:    e4,
+            url:        u.to_owned(),
+        }
+};
 
     
-    
-
-Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
-Url = r"https?://[\d\w-\.]+";
-Whitespace = r"[\s]+";
-
-
-
 pub Entries = Comma<Entry>;
-
+    
 Comma<Entry>: Vec<Entry> = {
-	//arbitrary-length list of ranges that are comma-separated
+	//arbitrary-length list of constants/ranges that are comma-separated
 	//trailing commas are forbidden in crontab
 	<e:Entry> <v:("," <Entry>)*>	=> {
         let mut v = v;    
@@ -85,7 +69,6 @@ Entry: ast::Entry = {
 	<n1:Num> "-" <n2:Num> => ast::Entry::Range(n1,n2),
 };
 
-//Special: u8 = <r"[*?LW]"> => 42;
 
 Special: ast::Special = {
     "*" => ast::Special::Asterisk,
@@ -94,4 +77,23 @@ Special: ast::Special = {
     "W" => ast::Special::W,
 };
     
+
+Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
+
+//TODO: pick one
+//Should urls have to start with http(s)?
+//Option1 ('no') is more convenient but more prone to user-error 
+//First char can't be \d, so there would be a weird error if url were
+// an IP address that didn't start with http(s).
+//  e.g. Option 1: `google.com` is well-formed but `8.8.8.8` is not
+//  e.g. Option 2: `https://google.com` and `https://8.8.8.8` are well-formed
+//Url could be parsed that starts with a special character, which 
+// could disguise errors; 
+//  e.g. Option 1: `*****google.com` and `******google.com` both well-formed
+//  e.g. Option 2: `*****https://google.com` is well-formed 
+//      but `******https://google.com` is not
+//Url = r"[^0-9\s]+";               //Option1
+Url = r"https?://.+[\d\w-\.]+";     //Option2
+//Would be ambiguous (c.f. Num) if url started with [\d] 
+//Easier to just require http/https before url
 

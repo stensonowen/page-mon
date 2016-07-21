@@ -1,8 +1,9 @@
 //All character info taken from https://en.wikipedia.org/wiki/Cron
 //Shoutout https://crontab.guru for being interesting and semi-relevant
 //Excludes only `%`, because I'm pretty sure it's irrelevant here
+use std::fmt::{Debug, Formatter, Error};
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub enum Entry {    //comma-delineated options for one 'place', e.g. minute
     Constant(u8),   //should never exceed 59
     Special(Special),// *, L, W, ?
@@ -11,7 +12,7 @@ pub enum Entry {    //comma-delineated options for one 'place', e.g. minute
     Range(u8,u8),   // (lower bound, upper bound)
 }
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub enum Special {
     Asterisk,
     L,
@@ -21,7 +22,6 @@ pub enum Special {
 
 pub type Entries = Vec<Entry>;  //One value; e.g. `*` in the `minute` field
 
-#[derive(Clone)]
 pub struct Line {
     //though there are slight differences between these fields,
     // they will be treated as identical until later.
@@ -32,4 +32,16 @@ pub struct Line {
     pub month:      Entries,
     pub weekday:    Entries,
     pub url:        String,
+}
+
+
+impl Debug for Line {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+        try!(write!(fmt, "{}\n", self.url));
+        try!(write!(fmt, "\tminute:\t\t{:?}\n",   self.minute));
+        try!(write!(fmt, "\thour:\t\t{:?}\n",     self.hour));
+        try!(write!(fmt, "\tdate:\t\t{:?}\n",     self.date));
+        try!(write!(fmt, "\tmonth:\t\t{:?}\n",    self.month));
+        write!(fmt, "\tweekday:\t{:?}\n", self.weekday)
+    }
 }
