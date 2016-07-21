@@ -1,41 +1,97 @@
 // :setf rust
 use std::str::FromStr;
+use ast;
 
 grammar;
 
-pub Start: i32 = Entries;//Entry;
+// Cron Grammar: 
+// (shortcuts are taken for readability/convenience so this isn't exactly right)
+// 
+//      Start   →   Entries
+//      Entries →   Entry_ Entry_ Entry_ Entry_ Entry_ Url
+//     {Entry_  →   Entry Entry'    }this can be elided using crate macro
+//     {Entry'  →   , Entry_  |  ε  } cleaner (also is ε possible?)
+//      Entry   →   Special  |  Num  |  */ Num  |  # Num  |  Num - Num
+//      Special →   *|?|L|W
+//     {Num     →   Num_ Num'               }much easier/more elegant to 
+//     {Num_    →   0  |  1  |  ...  |  9   } define numbers using the regex
+//     {Num'    →   Num  |  ε               } [0-9]+
 
-Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+
+//Url regex:    @^(https?|ftp)://[^\s/$.?#].[^\s]*$@iS
+//Url regex:    [0-9a-Z-\.]+
+
+//pub Start: u8 = Entries => 0;
+//pub Start: ast::Line = {
+//    <e0:Entries> Whitespace 
+//    <e1:Entries> Whitespace 
+//    <e2:Entries> Whitespace 
+//    <e3:Entries> Whitespace 
+//    <e4:Entries> Whitespace
+//    <u:Url> => 
+//        ast::Line {
+//            minute:     e0,
+//            hour:       e1,
+//            date:       e2,
+//            month:      e3,
+//            weekday:    e4,
+//            url:        u.to_owned(),
+//        }};
+
+pub Start: ast::Line = {
+    <e0:Entries> Whitespace 
+    <e1:Entries> //Whitespace 
+    <e2:Entries> 
+    <e3:Entries> 
+    <e4:Entries> 
+    <u:Url>  
+        =>
+        ast::Line {
+            minute:     e0.clone(),
+            hour:       e0.clone(),
+            date:       e0.clone(),
+            month:      e0.clone(),
+            weekday:    e0,
+            url:        "Hello world".to_string(),
+        }};
+
+    
+    
+
+Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
+Url = r"https?://[\d\w-\.]+";
+Whitespace = r"[\s]+";
 
 
 
 pub Entries = Comma<Entry>;
 
-//Comma<Entry>: Vec<Entry> = {
-Comma<Entry>: i32 = {
+Comma<Entry>: Vec<Entry> = {
 	//arbitrary-length list of ranges that are comma-separated
 	//trailing commas are forbidden in crontab
-	<e:Entry> <v:("," <Entry>)*>	=> match v {
-        _ => 42,
-        //None => 42,
-        //Some(v) => {
-        //    let mut v = v;
-        //    v.pre(e);
-        //    42
-        //}
+	<e:Entry> <v:("," <Entry>)*>	=> {
+        let mut v = v;    
+        v.push(e);
+        v
     }
 };
 
 
-//Entry: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
-
-Entry: i32 = {
-	Special         => 32,
-	Num             => 42,
-	<Num> "-" Num   => 42,
+Entry: ast::Entry = {
+	<s:Special>     => ast::Entry::Special(s),
+	<n:Num>         => ast::Entry::Constant(n),
+    "*/" <n:Num>    => ast::Entry::Slash(n),
+    "#"  <n:Num>    => ast::Entry::Hash(n),
+	<n1:Num> "-" <n2:Num> => ast::Entry::Range(n1,n2),
 };
 
-Special: i32 = <r"[*?LW#]"> => 42;
+//Special: u8 = <r"[*?LW]"> => 42;
 
-	
+Special: ast::Special = {
+    "*" => ast::Special::Asterisk,
+    "?" => ast::Special::Question,
+    "L" => ast::Special::L,
+    "W" => ast::Special::W,
+};
+    
 

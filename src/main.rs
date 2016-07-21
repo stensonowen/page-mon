@@ -20,16 +20,21 @@
 
 mod event;
 pub mod croncfg;
+pub mod ast;
 
 fn main() {
     let _e: event::Event;
 
     event::foo();
 
-    assert!(croncfg::parse_Start("*").is_ok());
-    assert!(croncfg::parse_Start("42").is_ok());
-    assert!(croncfg::parse_Start("1-2").is_ok());
-    assert!(croncfg::parse_Start("1,2").is_ok());
-    assert!(croncfg::parse_Start("1,2,3-4,5,6-7").is_ok());
-    assert!(croncfg::parse_Start("1,").is_err());
+    //assert!(croncfg::parse_Start("*").is_ok());
+    //assert!(croncfg::parse_Start("42").is_ok());
+    //assert!(croncfg::parse_Start("1-2").is_ok());
+    //assert!(croncfg::parse_Start("1,2").is_ok());
+    //assert!(croncfg::parse_Start("1,2,3-4,5,6-7").is_ok());
+    //assert!(croncfg::parse_Start("1,").is_err());
+    //assert!(croncfg::parse_Start("*/5").is_ok());
+    //assert!(croncfg::parse_Start("#5").is_ok());
+    //assert!(croncfg::parse_Start("* *").is_ok());
+    assert!(croncfg::parse_Start("* * * * * https://google.com").is_ok());
 }
