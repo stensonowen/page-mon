@@ -3,5 +3,11 @@ name = "page-mon"
 version = "0.1.0"
 authors = ["owen <stensonowen@gmail.com>"]
 
+build = "build.rs"
+
+[build-dependencies]
+lalrpop = "0.11.0"
+
 [dependencies]
 hyper = "0.9.10"
+lalrpop = "0.11.0"

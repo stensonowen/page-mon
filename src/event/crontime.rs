@@ -22,7 +22,7 @@
 enum Char {
     //up to parser to determine whether these values valid in context
     Number(u8),     // 0-59, 0-23, 1-31, 1-12, 0-6
-    Special(char),  // * , - ? L W #
+    Special(char),  // * , -            NOT ? L W #
     //Label(String),    //should be converted to numeric equivalent
 }
 
