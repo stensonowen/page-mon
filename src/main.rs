@@ -19,9 +19,17 @@
  */
 
 mod event;
+pub mod croncfg;
 
 fn main() {
     let _e: event::Event;
 
     event::foo();
+
+    assert!(croncfg::parse_Start("*").is_ok());
+    assert!(croncfg::parse_Start("42").is_ok());
+    assert!(croncfg::parse_Start("1-2").is_ok());
+    assert!(croncfg::parse_Start("1,2").is_ok());
+    assert!(croncfg::parse_Start("1,2,3-4,5,6-7").is_ok());
+    assert!(croncfg::parse_Start("1,").is_err());
 }
