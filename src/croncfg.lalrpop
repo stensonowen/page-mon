@@ -1,30 +1,22 @@
+// :setf rust
 use std::str::FromStr;
 
 grammar;
 
-pub Start: i32 = EntryA;
-
-pub EntryA: i32 = Entry EntryB => 42;
-	
-
-pub Term: i32 = {
-    <n:Num> => n,
-    "(" <t:Term> ")" => t,
-};
+pub Start: i32 = Entries;//Entry;
 
 Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
-
-EntryB: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
 
 
 
 pub Entries = Comma<Entry>;
 
-Comma<Entry>: Vec<Entry> = {
+//Comma<Entry>: Vec<Entry> = {
+Comma<Entry>: i32 = {
 	//arbitrary-length list of ranges that are comma-separated
 	//trailing commas are forbidden in crontab
-	<e:Entry> <v:("," <Entry>)>	=> match v {
-        _ => vec![42],
+	<e:Entry> <v:("," <Entry>)*>	=> match v {
+        _ => 42,
         //None => 42,
         //Some(v) => {
         //    let mut v = v;
