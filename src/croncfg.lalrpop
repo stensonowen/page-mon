@@ -47,7 +47,7 @@ Time: ast::Command = {
     
 
 Nickname: ast::Command = {
-    "@yearly"   => ast::Command {    
+    r"(?i)@yearly"   => ast::Command {    
         minute:     vec![ast::Value::CV(ast::ContVal::Constant(0))],
         hour:       vec![ast::Value::CV(ast::ContVal::Constant(0))],
         date:       vec![ast::Value::CV(ast::ContVal::Constant(1))],
@@ -121,33 +121,33 @@ ContVal: ast::ContVal = {
     <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
 };
     
-//TODO: figure out how to make case-insensitive
+//Case insensitive by using regex with the `i` flag
 
 DayOfWeek: u8 = {
     //starts from 0
-    "SUN" => 0,
-    "MON" => 1,
-    "TUE" => 2,
-    "WED" => 3,
-    "THU" => 4,
-    "FRI" => 5,
-    "SAT" => 6,
+    r"(?i)SUN" => 0,
+    r"(?i)MON" => 1,
+    r"(?i)TUE" => 2,
+    r"(?i)WED" => 3,
+    r"(?i)THU" => 4,
+    r"(?i)FRI" => 5,
+    r"(?i)SAT" => 6,
 };
 
 MonthOfYear: u8 = {
     //starts from 1
-    "JAN" => 1,
-    "FEB" => 2,
-    "MAR" => 3,
-    "APR" => 4,
-    "MAY" => 5,
-    "JUN" => 6,
-    "JUL" => 7,
-    "AUG" => 8,
-    "SEP" => 9,
-    "OCT" => 10,
-    "NOV" => 11,
-    "DEC" => 12,
+    r"(?i)JAN" => 1,
+    r"(?i)FEB" => 2,
+    r"(?i)MAR" => 3,
+    r"(?i)APR" => 4,
+    r"(?i)MAY" => 5,
+    r"(?i)JUN" => 6,
+    r"(?i)JUL" => 7,
+    r"(?i)AUG" => 8,
+    r"(?i)SEP" => 9,
+    r"(?i)OCT" => 10,
+    r"(?i)NOV" => 11,
+    r"(?i)DEC" => 12,
 };
 
 

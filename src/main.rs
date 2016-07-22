@@ -43,4 +43,6 @@ fn main() {
     println!("{:?}", croncfg::parse_Line("1*2\t4*/4https://bing.com").unwrap());
     println!("{:?}", croncfg::parse_Line("*****https://reddit.com").unwrap());
     println!("{:?}", croncfg::parse_Line("@yearly https://ddg.co").unwrap());
+    println!("{:?}", croncfg::parse_Line("* * * JAN SUN https://teamfortresstv.com").unwrap());
+    println!("{:?}", croncfg::parse_Line("* * * MaR fRi https://teamfortresstv.com").unwrap());
 }
