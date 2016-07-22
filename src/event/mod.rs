@@ -20,16 +20,17 @@
 
 extern crate hyper;
 use std::{time, ops};
-use ast::{Line, Special};
+//use ast::{Line, Special};
 mod crontime;
 
+/*
 pub struct Field {
     //e.g. Minute, Month
     range:  ops::Range<u8>,
     valid:  Vec<Special>,
 }
 
-
+#[allow(dead_code)]
 pub fn sanity_check(value: &Line) -> bool {
     //see https://en.wikipedia.org/wiki/Cron#Format
     let minute  = Field { range: 0..60, valid: vec![Special::Asterisk, Special::Slash(0)] };
@@ -42,6 +43,7 @@ pub fn sanity_check(value: &Line) -> bool {
 
     false 
 }
+*/
 
 #[allow(dead_code)]
 pub struct Event {

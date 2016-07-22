@@ -6,6 +6,7 @@ grammar;
 
 // Cron Grammar: 
 // (shortcuts are taken for readability/convenience so this isn't exactly right)
+// mostly based on http://linux.die.net/man/5/crontab
 // 
 //      Start   →   Entries
 //      Entries →   Entry_ Entry_ Entry_ Entry_ Entry_ Url
@@ -34,53 +35,111 @@ grammar;
 //
 // TODO: more special chars, i.e. JAN-DEC, SUN-SAT
 // TODO: make parsing context-specific specials part of grammar (I guess)
-// TODO: add parsing for comment? r"^\s*#.*"
+// TODO: add parsing for comment? r"^\s*#.*" or environment setting? (e.g. mailto)
 // TODO: better naming convention?
 
-
-pub Start: ast::Line = {
-    <e0:Entries> <e1:Entries> <e2:Entries> <e3:Entries> <e4:Entries> <u:Url> 
-        => 
-        ast::Line {
-            minute:     e0,
-            hour:       e1,
-            date:       e2,
-            month:      e3,
-            weekday:    e4,
-            url:        u.to_owned(),
-        }
+pub Line: ast::Line = {
+    <cmd:Command>   => ast::Line::Cmd(cmd),
+    <Comment>         //=> ast::Line::Comment,
 };
 
-    
-pub Entries = Comma<Entry>;
-    
-Comma<Entry>: Vec<Entry> = {
-	//arbitrary-length list of constants/ranges that are comma-separated
-	//trailing commas are forbidden in crontab
-	<e:Entry> <v:("," <Entry>)*>	=> {
-        let mut v = v;    
-        v.push(e);
-        v
+pub Command: ast::Command = {
+    <e0:Entry> <e1:Entry> <e2:Entry> <e3:Entry_Month> <e4:Entry_Day> <u:Url> => 
+        ast::Command{ minute:e0, hour:e1, date:e2, month:e3, weekday:e4, url:u.to_owned() },
+    "@yearly" <u:Url>   => ast::Command {    
+        minute:     vec![ast::Value::CV(ast::ContVal::Constant(0))],
+        hour:       vec![ast::Value::CV(ast::ContVal::Constant(0))],
+        date:       vec![ast::Value::CV(ast::ContVal::Constant(1))],
+        month:      vec![ast::Value::CV(ast::ContVal::Constant(1))],
+        weekday:    vec![ast::Value::CV(ast::ContVal::Asterisk)],
+        url: u.to_owned(),
+    },
+    //TODO: rest (less verbose way?)
+    //reboot??
+};
+
+pub Comment: ast::Line = {
+    r"#.*" => ast::Line::Comment,
+};
+
+//pub Nickname: u8 = {
+//    "@reboot" => 0,
+//    "@yearly"     =>  0 0 1 1 *
+//    "@annually"   =>  0 0 1 1 *
+//    "@monthly"    =>  0 0 1 * *
+//    "@weekly"     =>  0 0 * * 0
+//    "@daily"      =>  0 0 * * * 
+//    "@hourly"     =>  0 * * * * 
+//};
+
+pub Entry_Day = {
+    Entry,
+    <d:DayOfWeek> => vec![ast::Value::CV(ast::ContVal::Constant(d))],
+};
+
+pub Entry_Month = {
+    <Entry>,
+    <m:MonthOfYear> => vec![ast::Value::CV(ast::ContVal::Constant(m))],
+};
+
+pub Entry = Comma<Value>; 
+
+Comma<Value>: Vec<Value> = {
+    <val:Value> <vec:("," <Value>)*> => {
+        let mut vec = vec;
+        vec.push(val);
+        vec
     }
 };
 
-
-Entry: ast::Entry = {
-	<s:Special>     => ast::Entry::Special(s),
-	<n:Num>         => ast::Entry::Constant(n),
-    "*/" <n:Num>    => ast::Entry::Special(ast::Special::Slash(n)),
-    "#"  <n:Num>    => ast::Entry::Special(ast::Special::Hash(n)),
-	<n1:Num> "-" <n2:Num> => ast::Entry::Range(n1,n2),
+Value: ast::Value = {
+    <cv:ContVal>            => ast::Value::CV(cv),
+    <cv:ContVal> <s:Skip>   => ast::Value::Skip(cv, s),
 };
 
+Skip = "/" <Num>;
 
-Special: ast::Special = {
-    "*" => ast::Special::Asterisk,
-    "?" => ast::Special::Question,
-    "L" => ast::Special::L,
-    "W" => ast::Special::W,
+
+ContVal: ast::ContVal = {
+    "*"                 => ast::ContVal::Asterisk,
+    <n:Num>             => ast::ContVal::Constant(n),
+    <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
 };
     
+
+
+
+
+    
+
+
+DayOfWeek: u8 = {
+    //starts from 0
+    "SUN" => 0,
+    "MON" => 1,
+    "TUE" => 2,
+    "WED" => 3,
+    "THU" => 4,
+    "FRI" => 5,
+    "SAT" => 6,
+};
+
+MonthOfYear: u8 = {
+    //starts from 1
+    "JAN" => 1,
+    "FEB" => 2,
+    "MAR" => 3,
+    "APR" => 4,
+    "MAY" => 5,
+    "JUN" => 6,
+    "JUL" => 7,
+    "AUG" => 8,
+    "SEP" => 9,
+    "OCT" => 10,
+    "NOV" => 11,
+    "DEC" => 12,
+};
+
 
 Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
 

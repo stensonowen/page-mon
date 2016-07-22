@@ -23,24 +23,24 @@ pub mod croncfg;
 pub mod ast;
 
 fn main() {
-    let _e: event::Event;
+    //let _e: event::Event;
 
-    event::foo();
+    //event::foo();
 
-    //assert!(croncfg::parse_Start("*").is_ok());
-    //assert!(croncfg::parse_Start("42").is_ok());
-    //assert!(croncfg::parse_Start("1-2").is_ok());
-    //assert!(croncfg::parse_Start("1,2").is_ok());
-    //assert!(croncfg::parse_Start("1,2,3-4,5,6-7").is_ok());
-    //assert!(croncfg::parse_Start("1,").is_err());
-    //assert!(croncfg::parse_Start("*/5").is_ok());
-    //assert!(croncfg::parse_Start("#5").is_ok());
-    //assert!(croncfg::parse_Start("* *").is_ok());
+    //assert!(croncfg::parse_Line("*").is_ok());
+    //assert!(croncfg::parse_Line("42").is_ok());
+    //assert!(croncfg::parse_Line("1-2").is_ok());
+    //assert!(croncfg::parse_Line("1,2").is_ok());
+    //assert!(croncfg::parse_Line("1,2,3-4,5,6-7").is_ok());
+    //assert!(croncfg::parse_Line("1,").is_err());
+    //assert!(croncfg::parse_Line("*/5").is_ok());
+    //assert!(croncfg::parse_Line("#5").is_ok());
+    //assert!(croncfg::parse_Line("* *").is_ok());
     //
-    assert!(croncfg::parse_Start("* * * * * http://www.google.com").is_ok());
-    assert!(croncfg::parse_Start("1 2 3 4 5 https://google.com").is_ok());
-    println!("{:?}", croncfg::parse_Start("1 2 3 4 5 https://google.com").unwrap());
-    println!("{:?}", croncfg::parse_Start("1 * L 4-9,11-12,13,* */4 https://ddg.co").unwrap());
-    println!("{:?}", croncfg::parse_Start("1*2\t4*/4https://bing.com").unwrap());
-    println!("{:?}", croncfg::parse_Start("*****https://reddit.com").unwrap());
+    assert!(croncfg::parse_Line("* * * * * http://www.google.com").is_ok());
+    assert!(croncfg::parse_Line("1 2 3 4 5 https://google.com").is_ok());
+    println!("{:?}", croncfg::parse_Line("1 2 3 4 5 https://google.com").unwrap());
+    //println!("{:?}", croncfg::parse_Line("1 * L 4-9,11-12,13,* */4 https://ddg.co").unwrap());
+    println!("{:?}", croncfg::parse_Line("1*2\t4*/4https://bing.com").unwrap());
+    println!("{:?}", croncfg::parse_Line("*****https://reddit.com").unwrap());
 }
