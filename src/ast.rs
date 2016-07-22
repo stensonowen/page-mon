@@ -1,6 +1,25 @@
-//All character info taken from https://en.wikipedia.org/wiki/Cron
-//Shoutout https://crontab.guru for being interesting and semi-relevant
-//Excludes only `%`, because I'm pretty sure it's irrelevant here
+/*  Periodically crawl web pages and alert the user of changes
+ *
+ *  Copyright (C) 2016  Owen Stenson
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+ *
+ *  More information in the enclosed `LICENSE' file
+ */
+
+//Based on http://linux.die.net/man/5/crontab
+
 use std::fmt::{Debug, Formatter, Error};
 
 
@@ -12,12 +31,32 @@ pub enum Line {
 
 #[derive(Debug)]
 pub struct Command {
+    pub time:   Time,
+    pub url:    String,
+}
+
+#[derive(Debug)]
+pub struct Time {
     pub minute:     Entry,
     pub hour:       Entry,
     pub date:       Entry,
     pub month:      Entry,
     pub weekday:    Entry,
-    pub url:        Option<String>,
+}
+
+impl Time {
+    pub fn from(min: Value, hr: Value, date: Value, 
+                mon: Value, wd: Value) -> Time {
+        //shortcut to quickly construct a Time object
+        //useful for nicknames in croncfg.lalrpop
+        Time {
+            minute:     vec![min],
+            hour:       vec![hr],
+            date:       vec![date],
+            month:      vec![mon],
+            weekday:    vec![wd],
+        }
+    }
 }
 
 pub type Entry = Vec<Value>;
@@ -38,15 +77,21 @@ pub enum ContVal {
     Range(u8,u8),
 }
 
+//for convenient setting
+pub const ZERO: Value = Value::Constant(0);
+pub const ONE:  Value = Value::Constant(1);
+pub const STAR: Value = Value::CV(ContVal::Asterisk);
+
+
 impl Debug for Line {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         if let Line::Cmd(ref cmd) = *self {
             try!(write!(fmt, "{:?}\n", cmd.url));
-            try!(write!(fmt, "\tminute:\t\t{:?}\n", cmd.minute));
-            try!(write!(fmt, "\thour:\t\t{:?}\n",   cmd.hour));
-            try!(write!(fmt, "\tdate:\t\t{:?}\n",   cmd.date));
-            try!(write!(fmt, "\tmonth:\t\t{:?}\n",  cmd.month));
-            write!(fmt, "\tweekday:\t{:?}\n", cmd.weekday)
+            try!(write!(fmt, "\tminute:\t\t{:?}\n", cmd.time.minute));
+            try!(write!(fmt, "\thour:\t\t{:?}\n",   cmd.time.hour));
+            try!(write!(fmt, "\tdate:\t\t{:?}\n",   cmd.time.date));
+            try!(write!(fmt, "\tmonth:\t\t{:?}\n",  cmd.time.month));
+            write!(fmt, "\tweekday:\t{:?}\n", cmd.time.weekday)
         } else {
             write!(fmt, "#Comment")
         }

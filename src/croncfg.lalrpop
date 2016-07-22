@@ -1,3 +1,23 @@
+//  Periodically crawl web pages and alert the user of changes
+//
+//  Copyright (C) 2016  Owen Stenson
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+//
+//  More information in the enclosed `LICENSE' file
+
+
 // :setf rust
 use std::str::FromStr;
 use ast;
@@ -31,47 +51,31 @@ pub Line: ast::Line = {
 
 
 Command: ast::Command = {
-    <t:Time> <u:Url>    => {
-        let mut cmd = t;
-        cmd.url = Some(u.to_owned());
-        cmd
-    }
+    <t:Time> <u:Url>	=> ast::Command { time:t, url: u.to_owned() },
 };
     
 
-Time: ast::Command = {
+Time: ast::Time = {
     <a:Entry> <b:Entry> <c:Entry> <d:Entry_Month> <e:Entry_Day> => 
-        ast::Command{ minute:a, hour:b, date:c, month:d, weekday:e, url:None },
+        ast::Time { minute:a, hour:b, date:c, month:d, weekday:e },
     <Nickname>,
 };
     
 
-Nickname: ast::Command = {
-    r"(?i)@yearly"   => ast::Command {    
-        minute:     vec![ast::Value::Constant(0)],
-        hour:       vec![ast::Value::Constant(0)],
-        date:       vec![ast::Value::Constant(1)],
-        month:      vec![ast::Value::Constant(1)],
-        weekday:    vec![ast::Value::CV(ast::ContVal::Asterisk)],
-        url:        None,
-    }
-    //TODO: do the others less verbosely?
+use ast::{ZERO, ONE, STAR};
+Nickname: ast::Time = {
+    r"(?i)@yearly"  => ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
+    r"(?i)@annually"=> ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
+    r"(?i)@monthly" => ast::Time::from(ZERO, ZERO, ONE , STAR, STAR),
+    r"(?i)@weekly"  => ast::Time::from(ZERO, ZERO, STAR, STAR, ZERO),
+    r"(?i)@daily"   => ast::Time::from(ZERO, ZERO, STAR, STAR, STAR),
+    r"(?i)@hourly"  => ast::Time::from(ZERO, STAR, STAR, STAR, STAR),
 };
 
 
 Comment: ast::Line = {
     r"#.*" => ast::Line::Comment,
 };
-
-//Nickname: u8 = {
-//    "@reboot" => 0,
-//    "@yearly"     =>  0 0 1 1 *
-//    "@annually"   =>  0 0 1 1 *
-//    "@monthly"    =>  0 0 1 * *
-//    "@weekly"     =>  0 0 * * 0
-//    "@daily"      =>  0 0 * * * 
-//    "@hourly"     =>  0 * * * * 
-//};
 
 Entry_Day = {
     Entry,
