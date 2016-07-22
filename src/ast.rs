@@ -17,7 +17,7 @@ pub struct Command {
     pub date:       Entry,
     pub month:      Entry,
     pub weekday:    Entry,
-    pub url:        String,
+    pub url:        Option<String>,
 }
 
 pub type Entry = Vec<Value>;
@@ -41,7 +41,7 @@ pub enum ContVal {
 impl Debug for Line {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         if let Line::Cmd(ref cmd) = *self {
-            try!(write!(fmt, "{}\n", cmd.url));
+            try!(write!(fmt, "{:?}\n", cmd.url));
             try!(write!(fmt, "\tminute:\t\t{:?}\n", cmd.minute));
             try!(write!(fmt, "\thour:\t\t{:?}\n",   cmd.hour));
             try!(write!(fmt, "\tdate:\t\t{:?}\n",   cmd.date));
