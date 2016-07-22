@@ -28,13 +28,13 @@ pub enum Value {
     //separated by commas
     Skip(ContVal, u8),
     CV(ContVal),
+    Constant(u8),
 }
 
 #[derive(Debug)]
 pub enum ContVal {
-    //Values are contiguous, e.g. 4 or 1-5 or * but not */2
+    //Values are contiguous, e.g. 1-5 or * but not */2 or 4
     Asterisk,
-    Constant(u8),
     Range(u8,u8),
 }
 

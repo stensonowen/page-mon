@@ -26,7 +26,7 @@ grammar;
 
 pub Line: ast::Line = {
     <cmd:Command>   => ast::Line::Cmd(cmd),
-    <Comment>         //=> ast::Line::Comment,
+    <Comment>
 };
 
 
@@ -48,30 +48,16 @@ Time: ast::Command = {
 
 Nickname: ast::Command = {
     r"(?i)@yearly"   => ast::Command {    
-        minute:     vec![ast::Value::CV(ast::ContVal::Constant(0))],
-        hour:       vec![ast::Value::CV(ast::ContVal::Constant(0))],
-        date:       vec![ast::Value::CV(ast::ContVal::Constant(1))],
-        month:      vec![ast::Value::CV(ast::ContVal::Constant(1))],
+        minute:     vec![ast::Value::Constant(0)],
+        hour:       vec![ast::Value::Constant(0)],
+        date:       vec![ast::Value::Constant(1)],
+        month:      vec![ast::Value::Constant(1)],
         weekday:    vec![ast::Value::CV(ast::ContVal::Asterisk)],
         url:        None,
     }
     //TODO: do the others less verbosely?
 };
 
-//Command: ast::Command = {
-//    <e0:Entry> <e1:Entry> <e2:Entry> <e3:Entry_Month> <e4:Entry_Day> <u:Url> => 
-//        ast::Command{ minute:e0, hour:e1, date:e2, month:e3, weekday:e4, url:u.to_owned() },
-//    "@yearly" <u:Url>   => ast::Command {    
-//        minute:     vec![ast::Value::CV(ast::ContVal::Constant(0))],
-//        hour:       vec![ast::Value::CV(ast::ContVal::Constant(0))],
-//        date:       vec![ast::Value::CV(ast::ContVal::Constant(1))],
-//        month:      vec![ast::Value::CV(ast::ContVal::Constant(1))],
-//        weekday:    vec![ast::Value::CV(ast::ContVal::Asterisk)],
-//        url: u.to_owned(),
-//    },
-//    //TODO: rest (less verbose way?)
-//    //reboot??
-//};
 
 Comment: ast::Line = {
     r"#.*" => ast::Line::Comment,
@@ -89,12 +75,12 @@ Comment: ast::Line = {
 
 Entry_Day = {
     Entry,
-    <d:DayOfWeek> => vec![ast::Value::CV(ast::ContVal::Constant(d))],
+    <d:DayOfWeek> => vec![ast::Value::Constant(d)],
 };
 
 Entry_Month = {
     <Entry>,
-    <m:MonthOfYear> => vec![ast::Value::CV(ast::ContVal::Constant(m))],
+    <m:MonthOfYear> => vec![ast::Value::Constant(m)],
 };
 
 Entry = Comma<Value>; 
@@ -108,16 +94,16 @@ Comma<Value>: Vec<Value> = {
 };
 
 Value: ast::Value = {
+    <n:Num>                 => ast::Value::Constant(n),
     <cv:ContVal>            => ast::Value::CV(cv),
     <cv:ContVal> <s:Skip>   => ast::Value::Skip(cv, s),
 };
 
 Skip = "/" <Num>;
 
-
 ContVal: ast::ContVal = {
     "*"                 => ast::ContVal::Asterisk,
-    <n:Num>             => ast::ContVal::Constant(n),
+    //<n:Num>             => ast::ContVal::Constant(n),
     <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
 };
     
