@@ -5,18 +5,7 @@ use ast;
 grammar;
 
 // Cron Grammar: 
-// (shortcuts are taken for readability/convenience so this isn't exactly right)
-// mostly based on http://linux.die.net/man/5/crontab
-// 
-//      Start   →   Entries
-//      Entries →   Entry_ Entry_ Entry_ Entry_ Entry_ Url
-//     {Entry_  →   Entry Entry'    }this can be elided using crate macro
-//     {Entry'  →   , Entry_  |  ε  } cleaner (also is ε possible?)
-//      Entry   →   Special  |  Num  |  */ Num  |  # Num  |  Num - Num
-//      Special →   *|?|L|W
-//     {Num     →   Num_ Num'               }much easier/more elegant to 
-//     {Num_    →   0  |  1  |  ...  |  9   } define numbers using the regex
-//     {Num'    →   Num  |  ε               } [0-9]+
+//  mostly based on http://linux.die.net/man/5/crontab
 // 
 // Note about whitespace:
 //      LALRPOP does not treat whitespace as a token. Instead space and tab 
@@ -33,36 +22,62 @@ grammar;
 //      every version of that line in which removing whitespace did not
 //      introduce ambiguity.
 //
-// TODO: more special chars, i.e. JAN-DEC, SUN-SAT
-// TODO: make parsing context-specific specials part of grammar (I guess)
-// TODO: add parsing for comment? r"^\s*#.*" or environment setting? (e.g. mailto)
-// TODO: better naming convention?
+// TODO: add parsing for environment setting? (e.g. mailto)
 
 pub Line: ast::Line = {
     <cmd:Command>   => ast::Line::Cmd(cmd),
     <Comment>         //=> ast::Line::Comment,
 };
 
-pub Command: ast::Command = {
-    <e0:Entry> <e1:Entry> <e2:Entry> <e3:Entry_Month> <e4:Entry_Day> <u:Url> => 
-        ast::Command{ minute:e0, hour:e1, date:e2, month:e3, weekday:e4, url:u.to_owned() },
-    "@yearly" <u:Url>   => ast::Command {    
+
+Command: ast::Command = {
+    <t:Time> <u:Url>    => {
+        let mut cmd = t;
+        cmd.url = Some(u.to_owned());
+        cmd
+    }
+};
+    
+
+Time: ast::Command = {
+    <a:Entry> <b:Entry> <c:Entry> <d:Entry_Month> <e:Entry_Day> => 
+        ast::Command{ minute:a, hour:b, date:c, month:d, weekday:e, url:None },
+    <Nickname>,
+};
+    
+
+Nickname: ast::Command = {
+    "@yearly"   => ast::Command {    
         minute:     vec![ast::Value::CV(ast::ContVal::Constant(0))],
         hour:       vec![ast::Value::CV(ast::ContVal::Constant(0))],
         date:       vec![ast::Value::CV(ast::ContVal::Constant(1))],
         month:      vec![ast::Value::CV(ast::ContVal::Constant(1))],
         weekday:    vec![ast::Value::CV(ast::ContVal::Asterisk)],
-        url: u.to_owned(),
-    },
-    //TODO: rest (less verbose way?)
-    //reboot??
+        url:        None,
+    }
+    //TODO: do the others less verbosely?
 };
 
-pub Comment: ast::Line = {
+//Command: ast::Command = {
+//    <e0:Entry> <e1:Entry> <e2:Entry> <e3:Entry_Month> <e4:Entry_Day> <u:Url> => 
+//        ast::Command{ minute:e0, hour:e1, date:e2, month:e3, weekday:e4, url:u.to_owned() },
+//    "@yearly" <u:Url>   => ast::Command {    
+//        minute:     vec![ast::Value::CV(ast::ContVal::Constant(0))],
+//        hour:       vec![ast::Value::CV(ast::ContVal::Constant(0))],
+//        date:       vec![ast::Value::CV(ast::ContVal::Constant(1))],
+//        month:      vec![ast::Value::CV(ast::ContVal::Constant(1))],
+//        weekday:    vec![ast::Value::CV(ast::ContVal::Asterisk)],
+//        url: u.to_owned(),
+//    },
+//    //TODO: rest (less verbose way?)
+//    //reboot??
+//};
+
+Comment: ast::Line = {
     r"#.*" => ast::Line::Comment,
 };
 
-//pub Nickname: u8 = {
+//Nickname: u8 = {
 //    "@reboot" => 0,
 //    "@yearly"     =>  0 0 1 1 *
 //    "@annually"   =>  0 0 1 1 *
@@ -72,17 +87,17 @@ pub Comment: ast::Line = {
 //    "@hourly"     =>  0 * * * * 
 //};
 
-pub Entry_Day = {
+Entry_Day = {
     Entry,
     <d:DayOfWeek> => vec![ast::Value::CV(ast::ContVal::Constant(d))],
 };
 
-pub Entry_Month = {
+Entry_Month = {
     <Entry>,
     <m:MonthOfYear> => vec![ast::Value::CV(ast::ContVal::Constant(m))],
 };
 
-pub Entry = Comma<Value>; 
+Entry = Comma<Value>; 
 
 Comma<Value>: Vec<Value> = {
     <val:Value> <vec:("," <Value>)*> => {
@@ -106,12 +121,7 @@ ContVal: ast::ContVal = {
     <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
 };
     
-
-
-
-
-    
-
+//TODO: figure out how to make case-insensitive
 
 DayOfWeek: u8 = {
     //starts from 0
@@ -156,7 +166,8 @@ Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
 //  e.g. Option 2: `*****https://google.com` is well-formed 
 //      but `******https://google.com` is not
 //Url = r"[^0-9\s]+";               //Option1
-Url = r"https?://.+[\d\w-\.]+";     //Option2
+//Url = r"https?://.+[\d\w-\.]+";     //Option2
+Url = r"https?://[^\d\s]+";     //Option2
 //Would be ambiguous (c.f. Num) if url started with [\d] 
 //Easier to just require http/https before url
 
