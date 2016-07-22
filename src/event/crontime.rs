@@ -45,7 +45,7 @@ impl CronTime {
             return Err("Wrong number of fields");
         }
 
-        let minutes = match (fields[0], fields[0].parse::<u8>()) {
+        let _minutes = match (fields[0], fields[0].parse::<u8>()) {
             (_, Ok(n)) if n<60  => Char::Number(n),
             (_, Ok(n)) if n>59  => return Err("Minutes value out of range"),
             ("*",_)             => Char::Special('*'),
@@ -55,13 +55,13 @@ impl CronTime {
         };
 
 
-        let minutes = match fields[0] {
+        let _minutes = match fields[0] {
             //Char::Number(_) => 1,
             "x" => 1,
             _ => 2,
         };
 
-        let a:u8 = "4".parse::<u8>().unwrap();
+        let _a:u8 = "4".parse::<u8>().unwrap();
 
         Err("???")
 

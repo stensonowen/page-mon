@@ -19,9 +19,31 @@
  */
 
 extern crate hyper;
-use std::time;
+use std::{time, ops};
+use ast::{Line, Special};
 mod crontime;
 
+pub struct Field {
+    //e.g. Minute, Month
+    range:  ops::Range<u8>,
+    valid:  Vec<Special>,
+}
+
+
+pub fn sanity_check(value: &Line) -> bool {
+    //see https://en.wikipedia.org/wiki/Cron#Format
+    let minute  = Field { range: 0..60, valid: vec![Special::Asterisk, Special::Slash(0)] };
+    let hour    = Field { range: 0..24, valid: vec![Special::Asterisk, Special::Slash(0)] };
+    let date    = Field { range: 1..32, valid: vec![Special::Asterisk, Special::Slash(0),
+                            Special::Question, Special::W, Special::L] };
+    let month   = Field { range: 1..13, valid: vec![Special::Asterisk, Special::Slash(0)] };
+    let weekday = Field { range: 0.. 7, valid: vec![Special::Asterisk, Special::Slash(0),
+                            Special::Question, Special::L, Special::Hash(0)] }; //?
+
+    false 
+}
+
+#[allow(dead_code)]
 pub struct Event {
     url:    hyper::Url,
     period: time::Duration,

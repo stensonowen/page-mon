@@ -32,6 +32,10 @@ grammar;
 //      every version of that line in which removing whitespace did not
 //      introduce ambiguity.
 //
+// TODO: more special chars, i.e. JAN-DEC, SUN-SAT
+// TODO: make parsing context-specific specials part of grammar (I guess)
+// TODO: add parsing for comment? r"^\s*#.*"
+// TODO: better naming convention?
 
 
 pub Start: ast::Line = {
@@ -64,8 +68,8 @@ Comma<Entry>: Vec<Entry> = {
 Entry: ast::Entry = {
 	<s:Special>     => ast::Entry::Special(s),
 	<n:Num>         => ast::Entry::Constant(n),
-    "*/" <n:Num>    => ast::Entry::Slash(n),
-    "#"  <n:Num>    => ast::Entry::Hash(n),
+    "*/" <n:Num>    => ast::Entry::Special(ast::Special::Slash(n)),
+    "#"  <n:Num>    => ast::Entry::Special(ast::Special::Hash(n)),
 	<n1:Num> "-" <n2:Num> => ast::Entry::Range(n1,n2),
 };
 

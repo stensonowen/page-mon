@@ -5,19 +5,22 @@ use std::fmt::{Debug, Formatter, Error};
 
 #[derive(Debug)]
 pub enum Entry {    //comma-delineated options for one 'place', e.g. minute
+    //Each of these options is always allowed; 
+    // constant, range, and (at least) asterisk are always valid
     Constant(u8),   //should never exceed 59
     Special(Special),// *, L, W, ?
-    Hash(u8),       //`#2`  ↔ the second X-day of the month
-    Slash(u8),      //`*/4` ↔ all values that are multiples of 4 
     Range(u8,u8),   // (lower bound, upper bound)
 }
 
 #[derive(Debug)]
 pub enum Special {
+    //Not necessarily always allowed; everything but Asterisk 
     Asterisk,
     L,
     W,
     Question,
+    Hash(u8),       //`#2`  ↔ the second X-day of the month
+    Slash(u8),      //`*/4` ↔ all values that are multiples of 4 
 }
 
 pub type Entries = Vec<Entry>;  //One value; e.g. `*` in the `minute` field
