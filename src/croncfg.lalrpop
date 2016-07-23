@@ -157,7 +157,7 @@ Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
 //      but `******https://google.com` is not
 //Url = r"[^0-9\s]+";               //Option1
 //Url = r"https?://.+[\d\w-\.]+";     //Option2
-Url = r"https?://[^\d\s]+";     //Option2
+Url = r"https?://[\S]+";     //Option2
 //Would be ambiguous (c.f. Num) if url started with [\d] 
 //Easier to just require http/https before url
 
