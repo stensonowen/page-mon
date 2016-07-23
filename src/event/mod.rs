@@ -45,8 +45,9 @@ use ast::*;
 //mod crontime;
 
 
-trait HasNext {
+pub trait HasNext {
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8;
+    fn verify(&self, valid: ops::Range<u8>) -> bool;
 }
 
 impl HasNext for ContVal {
@@ -75,6 +76,16 @@ impl HasNext for ContVal {
             }
         }
     }
+    fn verify(&self, valid: ops::Range<u8>) -> bool {
+        match *self {
+            ContVal::Asterisk => true,
+            ContVal::Range(min,max) => 
+                min >= valid.start
+                && max < valid.end
+                && min < max
+        }
+    }
+
 }
 
 impl HasNext for Value {
@@ -90,8 +101,6 @@ impl HasNext for Value {
                         //by as small a margin as possible
                         //TODO: verify mult ≠ 0
                         current
-                        //let div = current / mult + 1;
-                        //div * mult
                     },
                     ContVal::Range(min,max) => {
                         // `min-max/mult`
@@ -102,19 +111,26 @@ impl HasNext for Value {
                         } else {
                             cmp::max(current,min-1)
                         }
-                        //let start = {
-                        //    if current >= max {
-                        //        min-1
-                        //    } else {
-                        //        cmp::max(current,min-1)
-                        //    }
-                        //};
-                        //let div = start / mult + 1;
-                        //div * mult
                     },
                 };
-                (start / mult + 1) * mult
+                //hard to predict whether `guess` will exceed the hard max
+                //there's probably a better way to do this?
+                let guess = (start / mult + 1) * mult;
+                if guess >= range.end {
+                    self.next(0, range)
+                } else {
+                    guess
+                }
+
             }
+        }
+    }
+    fn verify(&self, valid: ops::Range<u8>) -> bool {
+        match *self {
+            Value::CV(ref cv)   => cv.verify(valid),
+            Value::Constant(c)  => valid.start<=c && c<valid.end,
+            Value::Skip(ref cv, mult) => 
+                mult != 0 && mult < valid.end && cv.verify(valid), 
         }
     }
 }

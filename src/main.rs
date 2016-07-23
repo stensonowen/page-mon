@@ -21,29 +21,44 @@
 mod event;
 pub mod croncfg;
 pub mod ast;
+use ast::*;
+use event::HasNext;
 
 fn main() {
-    //let _e: event::Event;
 
-    //event::foo();
+    let   valid_cmd = croncfg::parse_Command("10-20/7 2 3-5 */4 7 https://valid.com");
+    assert!(valid_cmd.is_ok());
+    let vt = valid_cmd.unwrap().time;
+    for entry in &vt.minute { assert!(entry.verify(0..60)); }
+    for entry in &vt.hour   { assert!(entry.verify(0..24)); }
+    for entry in &vt.date   { assert!(entry.verify(1..32)); } //variable
+    for entry in &vt.month  { assert!(entry.verify(1..13)); }
+    for entry in &vt.weekday{ assert!(entry.verify(0.. 8)); } //0 = 7 = SUN
+    assert!(vt.minute[0]    .next(0, 0..60) == 14);
+    assert!(vt.hour[0]      .next(3, 0..24) ==  2);
+    assert!(vt.date[0]      .next(5, 1..32) ==  3);
+    assert!(vt.month[0]     .next(12,1..13) ==  4);
+    assert!(vt.weekday[0]   .next(7, 0.. 8) ==  7);
 
-    //assert!(croncfg::parse_Line("*").is_ok());
-    //assert!(croncfg::parse_Line("42").is_ok());
-    //assert!(croncfg::parse_Line("1-2").is_ok());
-    //assert!(croncfg::parse_Line("1,2").is_ok());
-    //assert!(croncfg::parse_Line("1,2,3-4,5,6-7").is_ok());
-    //assert!(croncfg::parse_Line("1,").is_err());
-    //assert!(croncfg::parse_Line("*/5").is_ok());
-    //assert!(croncfg::parse_Line("#5").is_ok());
-    //assert!(croncfg::parse_Line("* *").is_ok());
-    //
+    let invalid_cmd = croncfg::parse_Command("60 */0 0 2-1 5-9 https://invalid.com");
+    assert!(invalid_cmd.is_ok());
+    let it = invalid_cmd.unwrap().time;
+    for entry in it.minute  { assert!(!entry.verify(0..60)); }
+    for entry in it.hour    { assert!(!entry.verify(0..24)); }
+    for entry in it.date    { assert!(!entry.verify(1..32)); } //variable
+    for entry in it.month   { assert!(!entry.verify(1..13)); }
+    for entry in it.weekday { assert!(!entry.verify(0.. 8)); } //0 = 7 = SUN
+    
+
+    
+
     assert!(croncfg::parse_Line("* * * * * http://www.google.com").is_ok());
     assert!(croncfg::parse_Line("1 2 3 4 5 https://google.com").is_ok());
     assert!(croncfg::parse_Line("1/1 2 3 4 5 https://google.com").is_err());
-    println!("{:?}", croncfg::parse_Line("1 2 3 4 5 https://google.com").unwrap());
-    println!("{:?}", croncfg::parse_Line("1*2\t4*/4https://bing.com").unwrap());
-    println!("{:?}", croncfg::parse_Line("*****https://reddit.com").unwrap());
-    println!("{:?}", croncfg::parse_Line("@yearly https://ddg.co").unwrap());
-    println!("{:?}", croncfg::parse_Line("* * * JAN SUN https://teamfortresstv.com").unwrap());
-    println!("{:?}", croncfg::parse_Line("* * * MaR fRi https://teamfortresstv.com").unwrap());
+    //println!("{:?}", croncfg::parse_Line("1 2 3 4 5 https://google.com").unwrap());
+    //println!("{:?}", croncfg::parse_Line("1*2\t4*/4https://bing.com").unwrap());
+    //println!("{:?}", croncfg::parse_Line("*****https://reddit.com").unwrap());
+    //println!("{:?}", croncfg::parse_Line("@yearly https://ddg.co").unwrap());
+    //println!("{:?}", croncfg::parse_Line("* * * JAN SUN https://teamfortresstv.com").unwrap());
+    //println!("{:?}", croncfg::parse_Line("* * * MaR fRi https://teamfortresstv.com").unwrap());
 }

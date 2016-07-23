@@ -50,7 +50,7 @@ pub Line: ast::Line = {
 };
 
 
-Command: ast::Command = {
+pub Command: ast::Command = {
     <t:Time> <u:Url>	=> ast::Command { time:t, url: u.to_owned() },
 };
     
@@ -64,12 +64,12 @@ Time: ast::Time = {
 
 use ast::{ZERO, ONE, STAR};
 Nickname: ast::Time = {
-    //r"(?i)@yearly"  => ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
-    //r"(?i)@annually"=> ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
-    //r"(?i)@monthly" => ast::Time::from(ZERO, ZERO, ONE , STAR, STAR),
-    //r"(?i)@weekly"  => ast::Time::from(ZERO, ZERO, STAR, STAR, ZERO),
-    //r"(?i)@daily"   => ast::Time::from(ZERO, ZERO, STAR, STAR, STAR),
-    //r"(?i)@hourly"  => ast::Time::from(ZERO, STAR, STAR, STAR, STAR),
+    r"(?i)@yearly"  => ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
+    r"(?i)@annually"=> ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
+    r"(?i)@monthly" => ast::Time::from(ZERO, ZERO, ONE , STAR, STAR),
+    r"(?i)@weekly"  => ast::Time::from(ZERO, ZERO, STAR, STAR, ZERO),
+    r"(?i)@daily"   => ast::Time::from(ZERO, ZERO, STAR, STAR, STAR),
+    r"(?i)@hourly"  => ast::Time::from(ZERO, STAR, STAR, STAR, STAR),
 };
 
 
