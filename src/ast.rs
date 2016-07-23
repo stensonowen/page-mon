@@ -19,6 +19,13 @@
  */
 
 //Based on http://linux.die.net/man/5/crontab
+//
+//It would be interesting to try to use pseudo-polymorphism instead of enums.
+//You can impl an enum but not its variant, but it would be nice to call 
+// `.next()` on, say, Value::ContVal::Asterisk. Entry would have to become
+// a generic vector which stores anything implementing the `Next` trait.
+//This has the drawback of I'm not sure if it's possible. Also apparently
+//generic typedefs are a no-no. I'll leave it alone for now.
 
 use std::fmt::{Debug, Formatter, Error};
 

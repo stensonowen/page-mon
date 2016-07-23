@@ -18,10 +18,107 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
+/* BS:
+ *  The biggest thing that a Command object needs to do is, given its 
+ *  internal data and the current time, return the next time it should run.
+ *  There seem to be two ways of approaching this.
+ *  1. each vector of Values is consolidated into a hash set of valid times:
+ *      this would be slightly costly in terms of initial construction and 
+ *      memory usage, but fetching the 'next' valid value would be very fast.
+ *      5 hash tables large enough to store `*****` is 263 bytes (134 u8s)
+ *  2. fetch the 'next' valid value for each Value in the vector. that would
+ *      require implementing 'next' for Asterisk, Range, Constant, and Skip.
+ *      This would require less memory but maybe a little more cpu to find 
+ *      'next' an arbitrary (though effectively like 1 or 2) number of times.
+ *      It might be in our best interest to consolidate values also (e.g. 
+ *      `2,1-3` and `1-3,3-4` are redundant), but I'm not sure how I'd do that.
+ *  (1) would probably be simpler, cleaner, and less interesting. 
+ *
+ *
+ *
+ */
+
 extern crate hyper;
-use std::{time, ops};
-//use ast::{Line, Special};
-mod crontime;
+//use std::time;
+use std::{ops, cmp};
+use ast::*;
+//mod crontime;
+
+
+trait HasNext {
+    fn next(&self, current: u8, range: ops::Range<u8>) -> u8;
+}
+
+impl HasNext for ContVal {
+    fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
+        //safe to assume current \in range
+        match *self {
+            ContVal::Asterisk       => {
+                let guess = current + 1;
+                if guess < range.end {
+                    guess
+                } else {
+                    range.start
+                }
+            }
+            ContVal::Range(min,max) => {
+                //not safe to assume that min <= current <= max
+                //TODO: verify min < max
+                //TODO: increment max by one: cron ranges are inclusive
+                //TODO: verify min and max both in range
+                let guess = current + 1;
+                if guess >= min && guess < max {
+                    guess
+                } else {
+                    min
+                }
+            }
+        }
+    }
+}
+
+impl HasNext for Value {
+    fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
+        match *self {
+            Value::CV(ref cv)   => cv.next(current, range),
+            Value::Constant(c)  => c,
+            Value::Skip(ref cv, mult) => {
+                let start = match *cv {
+                    ContVal::Asterisk => {
+                        // `*/mult`
+                        //need a multiple of n that is greater than current
+                        //by as small a margin as possible
+                        //TODO: verify mult ≠ 0
+                        current
+                        //let div = current / mult + 1;
+                        //div * mult
+                    },
+                    ContVal::Range(min,max) => {
+                        // `min-max/mult`
+                        //event wasn't necessarily fired at `current` time
+                        //TODO: verify min and max are in range and min < max
+                        if current >= max {
+                            min-1
+                        } else {
+                            cmp::max(current,min-1)
+                        }
+                        //let start = {
+                        //    if current >= max {
+                        //        min-1
+                        //    } else {
+                        //        cmp::max(current,min-1)
+                        //    }
+                        //};
+                        //let div = start / mult + 1;
+                        //div * mult
+                    },
+                };
+                (start / mult + 1) * mult
+            }
+        }
+    }
+}
+
 
 /*
 pub struct Field {
@@ -45,6 +142,7 @@ pub fn sanity_check(value: &Line) -> bool {
 }
 */
 
+/*
 #[allow(dead_code)]
 pub struct Event {
     url:    hyper::Url,
@@ -57,3 +155,4 @@ pub fn foo() {
     let ct = crontime::CronTime::from_string("a b c d e");
     println!("{:?}", ct);
 }
+*/
