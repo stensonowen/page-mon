@@ -43,7 +43,7 @@ extern crate chrono;
 //use std::time;
 use std::{ops, cmp};
 use ast::*;
-use event::chrono::Datelike;
+//use event::chrono::Datelike;
 //mod crontime;
 
 
@@ -55,8 +55,45 @@ pub trait HasNext {
     //If the result is ≤ current, then this field overflowed by 1.
     //Can be buggy on the month field when the max varies. Might
     // not overflow predictably.
+    //
+    //So I spent a full day trying to implement the next_month() corner
+    //case because not all months have the same number of days before
+    //realizing I didn't need to, so I'm going to explain myself.
+    //The way next() works is by checking the minimum value that's in
+    //range and higher than `current`, and if no such number exists it 
+    //returns the minimum valid value. Ordinarily, next() doesn't need
+    //to track overflow because next() overflowed by 1 if next<=current
+    //and 0 otherwise. However, because some months have fewer than 31 
+    //days, sometimes a Value (e.g. 30) is only valid for certain months.
+    //Thus not only would next() have to check with a variable `max`, 
+    //it would also have to keep track of the number of times it over-
+    //flowed. However, the Gregorian calendar taketh away, but it also
+    //giveth: there are no consecutive months that both do not have the
+    //maximum number of days (31). That means this bug will never happen,
+    //because if the current month has 31 days ...
+    //dammit
+    //Scratch that. If we have `@monthly` and it's Jan 30, then next() 
+    //yields Feb 30, and correcting that results in an overflow by 2.
+    //So.
+    //next() is almost always right. It can be wrong if the month after 
+    //the `current` month has fewer days than the upper limit of the range. 
+    //This is easier to fix. Instead of writing a new function to generate
+    //the next, we can take the final date with all relevant fields 
+    //updated and verify that it's valid. If it's invalid, we call next()
+    //on the date field at most 3 more times until the date is valid.
+    //The worst case scenario (next()ing 3 times) is when `current` is 
+    //January and `range.end` is 31 (and `range.start`<29): then next()
+    //gives us Feb 29, which is invalid (usually), and next() gives 
+    //Feb 30, Feb 31, and finally Mar N. Mar N is guaranteed to be valid 
+    //because March has 31 days and each next() overflows by at most 1.
+    //Christ.
 
-    fn next_month(&self, current: u8) -> (u8,u8);
+    //fn next_month(&self, current: u8) -> (u8,u8);
+    //fn next_month(&self, current_month: u8, current_year: u16) -> (u8,u8);
+    //ACUTALLY... February has 28-29 days but March has 31. So 
+    // there's no way `next` would skip Feb AND Mar unless it 
+    // were invalid.
+
     //similar to `next`, but takes into account the variable 
     // ranges. Also returns both the `next` month value and the
     // number of times it overflowed (this is the only field 
@@ -68,9 +105,8 @@ pub trait HasNext {
     // the valid range (e.g. 100) and ranges like 5..2.
 }
 
-fn is_leap_year(year: i32) -> bool {
+/*fn is_leap_year(year: u16) -> bool {
     // https://en.wikipedia.org/wiki/Leap_year#Algorithm
-    // chrono's `year` is an i32 but only needs to be u16
     if year % 4 != 0 {
         false 
     } else if year % 100 != 0 {
@@ -80,7 +116,9 @@ fn is_leap_year(year: i32) -> bool {
     } else {
         true
     }
-}
+}*/
+
+//const MONTH_LENS: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];//good placeholder?
 
 
 impl HasNext for ContVal {
@@ -109,36 +147,41 @@ impl HasNext for ContVal {
             }
         }
     }
-    fn next_month(&self, current: u8) -> (u8,u8) {
+    /*
+    fn next_month(&self, current_month: u8, current_year: u16) -> (u8,u8) {
         //`max` depends on which month and year it is. `current`
         // should always refer to the month the program is executing
-        let month_lens: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];
         //30: sep april june november
-        let max: u8 = {
-            if current != 2 {
-                month_lens[current as usize]
+        let month_len: u8 = {
+            if current_month != 2 {
+                MONTH_LENS[current_month as usize]
             } else {
-                let year = chrono::Local::today().year();
-                if is_leap_year(year) {
-                    29
-                } else {
-                    29
-                }
+                //let year:i32 = chrono::Local::today().year();
+                if is_leap_year(current_year)   { 29 }
+                else                            { 28 }
             }
 
         };
         match *self {
             ContVal::Asterisk   => {
-                let next = self.next(current, 1..2);
-                let overflow = match next <= current {
+                let next = self.next(current_month, 1..month_len);
+                let overflow = match next <= current_month {
                     true  => 1,
                     false => 0,
                 };
                 (next,overflow)
             },
-            _ => (0,0),
+            ContVal::Range(min,max) => {
+                //it's okay if this bit is uninspired, it's such a
+                // niche corner case who cares.
+                let mut overflow = 0;
+                for i in 0..12 {
+                    let next = 
+                }
+            }
         }
     }
+    */
     fn verify(&self, valid: ops::Range<u8>) -> bool {
         match *self {
             ContVal::Asterisk => true,
@@ -152,9 +195,9 @@ impl HasNext for ContVal {
 }
 
 impl HasNext for Value {
-    fn next_month(&self, current: u8) -> (u8,u8) {
-        (0,0)
-    }
+    //fn next_month(&self, current_month: u8, current_year: u16) -> (u8,u8) {
+    //    (0,0)
+    //}
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
         match *self {
             Value::CV(ref cv)   => cv.next(current, range),

@@ -52,7 +52,9 @@ fn main() {
     let test_cmd = croncfg::parse_Command("1 1 30-31 1 1 https://invalid.com");
     assert!(test_cmd.is_ok());
     let tm = test_cmd.unwrap().time;
-    let ref mon = tm.month[0];
+    let ref mon = tm.date[0];
+    //println!("Time: {:?}", tm);
+    println!("Field: {:?}", mon);
     println!("Next: {}", mon.next(25, 1..32));
 
     
