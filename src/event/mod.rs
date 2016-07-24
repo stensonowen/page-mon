@@ -1,5 +1,4 @@
-/*	Periodically crawl web pages and alert the user of changes
- *
+/*	Periodically crawl web pages and alert the user of changes 
  *  Copyright (C) 2016  Owen Stenson
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -40,10 +39,12 @@
 
 extern crate hyper;
 extern crate chrono;
+use self::chrono::{Local, datetime};
 //use std::time;
-use std::{ops, cmp};
+use std::{ops, cmp, u8};
 use ast::*;
 //use event::chrono::Datelike;
+use event::chrono::{Timelike, Datelike};
 //mod crontime;
 
 
@@ -87,43 +88,24 @@ pub trait HasNext {
     //Feb 30, Feb 31, and finally Mar N. Mar N is guaranteed to be valid 
     //because March has 31 days and each next() overflows by at most 1.
     //Christ.
+    //https://en.wikipedia.org/wiki/International_Fixed_Calendar
 
-    //fn next_month(&self, current: u8) -> (u8,u8);
-    //fn next_month(&self, current_month: u8, current_year: u16) -> (u8,u8);
-    //ACUTALLY... February has 28-29 days but March has 31. So 
-    // there's no way `next` would skip Feb AND Mar unless it 
-    // were invalid.
-
-    //similar to `next`, but takes into account the variable 
-    // ranges. Also returns both the `next` month value and the
-    // number of times it overflowed (this is the only field 
-    // where that can be ≥ 2 or cannot be predicted as `next` does.
-
-    fn verify(&self, valid: ops::Range<u8>) -> bool;
+    fn verify(&self, valid: &ops::Range<u8>) -> bool;
     //returns whether this value is valid. 
     //Examples of invalid values include constants outside the 
     // the valid range (e.g. 100) and ranges like 5..2.
 }
 
-/*fn is_leap_year(year: u16) -> bool {
-    // https://en.wikipedia.org/wiki/Leap_year#Algorithm
-    if year % 4 != 0 {
-        false 
-    } else if year % 100 != 0 {
-        true 
-    } else if year % 400 != 0 {
-        false
-    } else {
-        true
-    }
-}*/
-
-//const MONTH_LENS: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];//good placeholder?
-
 
 impl HasNext for ContVal {
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
         //safe to assume current \in range
+        //TODO: track overflow. field overflowed by 1 if 
+        // next<=current or 0 otherwise.
+        //TODO: verify resulting date is valid. May need to call 
+        // next() up to three more times* to result in a valid date
+        // in the case of `current:2`, `range:29..32`.
+        // And remember to track the overflow again.
         match *self {
             ContVal::Asterisk       => {
                 let guess = current + 1;
@@ -135,9 +117,9 @@ impl HasNext for ContVal {
             }
             ContVal::Range(min,max) => {
                 //not safe to assume that min <= current <= max
-                //TODO: verify min < max
+                //DONE: verify min < max
                 //TODO: increment max by one: cron ranges are inclusive
-                //TODO: verify min and max both in range
+                //DONE: verify min and max both in range
                 let guess = current + 1;
                 if guess >= min && guess < max {
                     guess
@@ -147,42 +129,8 @@ impl HasNext for ContVal {
             }
         }
     }
-    /*
-    fn next_month(&self, current_month: u8, current_year: u16) -> (u8,u8) {
-        //`max` depends on which month and year it is. `current`
-        // should always refer to the month the program is executing
-        //30: sep april june november
-        let month_len: u8 = {
-            if current_month != 2 {
-                MONTH_LENS[current_month as usize]
-            } else {
-                //let year:i32 = chrono::Local::today().year();
-                if is_leap_year(current_year)   { 29 }
-                else                            { 28 }
-            }
 
-        };
-        match *self {
-            ContVal::Asterisk   => {
-                let next = self.next(current_month, 1..month_len);
-                let overflow = match next <= current_month {
-                    true  => 1,
-                    false => 0,
-                };
-                (next,overflow)
-            },
-            ContVal::Range(min,max) => {
-                //it's okay if this bit is uninspired, it's such a
-                // niche corner case who cares.
-                let mut overflow = 0;
-                for i in 0..12 {
-                    let next = 
-                }
-            }
-        }
-    }
-    */
-    fn verify(&self, valid: ops::Range<u8>) -> bool {
+    fn verify(&self, valid: &ops::Range<u8>) -> bool {
         match *self {
             ContVal::Asterisk => true,
             ContVal::Range(min,max) => 
@@ -195,9 +143,6 @@ impl HasNext for ContVal {
 }
 
 impl HasNext for Value {
-    //fn next_month(&self, current_month: u8, current_year: u16) -> (u8,u8) {
-    //    (0,0)
-    //}
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
         match *self {
             Value::CV(ref cv)   => cv.next(current, range),
@@ -208,13 +153,13 @@ impl HasNext for Value {
                         // `*/mult`
                         //need a multiple of n that is greater than current
                         //by as small a margin as possible
-                        //TODO: verify mult ≠ 0
+                        //DONE: verify mult ≠ 0
                         current
                     },
                     ContVal::Range(min,max) => {
                         // `min-max/mult`
                         //event wasn't necessarily fired at `current` time
-                        //TODO: verify min and max are in range and min < max
+                        //DONE: verify min and max are in range and min < max
                         if current >= max {
                             min-1
                         } else {
@@ -234,7 +179,7 @@ impl HasNext for Value {
             }
         }
     }
-    fn verify(&self, valid: ops::Range<u8>) -> bool {
+    fn verify(&self, valid: &ops::Range<u8>) -> bool {
         match *self {
             Value::CV(ref cv)   => cv.verify(valid),
             Value::Constant(c)  => valid.start<=c && c<valid.end,
@@ -244,40 +189,109 @@ impl HasNext for Value {
     }
 }
 
-
-/*
-pub struct Field {
-    //e.g. Minute, Month
-    range:  ops::Range<u8>,
-    valid:  Vec<Special>,
+fn is_leap_year(year: u16) -> bool {
+    // https://en.wikipedia.org/wiki/Leap_year#Algorithm
+    if year % 4 != 0 {
+        false 
+    } else if year % 100 != 0 {
+        true 
+    } else if year % 400 != 0 {
+        false
+    } else {
+        true
+    }
 }
 
-#[allow(dead_code)]
-pub fn sanity_check(value: &Line) -> bool {
-    //see https://en.wikipedia.org/wiki/Cron#Format
-    let minute  = Field { range: 0..60, valid: vec![Special::Asterisk, Special::Slash(0)] };
-    let hour    = Field { range: 0..24, valid: vec![Special::Asterisk, Special::Slash(0)] };
-    let date    = Field { range: 1..32, valid: vec![Special::Asterisk, Special::Slash(0),
-                            Special::Question, Special::W, Special::L] };
-    let month   = Field { range: 1..13, valid: vec![Special::Asterisk, Special::Slash(0)] };
-    let weekday = Field { range: 0.. 7, valid: vec![Special::Asterisk, Special::Slash(0),
-                            Special::Question, Special::L, Special::Hash(0)] }; //?
-
-    false 
-}
-*/
-
-/*
-#[allow(dead_code)]
-pub struct Event {
-    url:    hyper::Url,
-    period: time::Duration,
-
+fn is_valid_date(date: u8, month: u8, year: u16) -> bool {
+    //invalid date only happens when date > DaysInMonth
+    let feb_len = match is_leap_year(year) {
+        true  => 29,
+        false => 28,
+    };
+    let month_lens = [31,feb_len,31,30,31,30,31,31,30,31,30,31];
+    date <= month_lens[month as usize]
 }
 
 
-pub fn foo() {
-    let ct = crontime::CronTime::from_string("a b c d e");
-    println!("{:?}", ct);
+//Next: calling .next() on a Value will return a u8, from which
+//it can be determined whether that Value overflowed.
+//This state needs to be easily stored/compared.
+#[derive(PartialEq, Clone, Copy)]
+struct Next {
+    value:      u8,
+    overflow:   bool,
 }
-*/
+
+impl Next {
+    fn worst() -> Next {
+        Next {
+            value:  u8::MAX,
+            overflow: true,
+        }
+    }
+}
+
+impl PartialOrd for Next {
+    fn partial_cmp(&self, other:&Next) -> Option<cmp::Ordering> {
+        if self == other {
+            Some(cmp::Ordering::Equal)
+        } else if self.overflow == false && other.overflow {
+            Some(cmp::Ordering::Less)
+        } else if self.overflow == other.overflow 
+                && self.value < other.value {
+            Some(cmp::Ordering::Less)
+        } else {
+            Some(cmp::Ordering::Greater)
+        }
+    }
+}
+
+//Valid ranges for each field
+//Lower bound included, upper bound excluded
+const MINUTE_RANGE: ops::Range<u8> = 0..60;
+const HOUR_RANGE:   ops::Range<u8> = 0..24;
+const DATE_RANGE:   ops::Range<u8> = 1..32;
+const MONTH_RANGE:  ops::Range<u8> = 1..13;
+const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
+
+impl Time {
+    pub fn verify(&self) -> bool {
+        //test all elements in the minute, hour, date, etc. vectors
+        //by calling verify() on all of them and only returning true
+        //if all of them do.
+        let field_vectors = vec![&self.minute, &self.hour, 
+                    &self.date, &self.month, &self.weekday];
+        let ranges = vec![MINUTE_RANGE, HOUR_RANGE,
+                    DATE_RANGE, MONTH_RANGE, WEEKDAY_RANGE];
+        let mut zip = field_vectors.iter().zip(ranges.iter());
+        zip.all(|(&fv, ref range)| 
+                fv.iter().all(|ref f| f.verify(range)))
+    }
+    fn next(&self) -> datetime::DateTime<Local> {
+        let now = Local::now();
+        //increment by date or weekday, whichever is less
+        //let (mut minute, mut hour)  = (now.minute(), now.hour());
+        //let (mut date, mut weekday) = (now.date(),   now.weekday());
+        //let (mut month, mut year)   = (now.month(),  now.year());
+
+        //let minute = self.minute.next(now.minute(), 0..60);
+        let minute = {
+            let current_min = now.minute() as u8;
+            let mut best: Next = Next::worst();
+            let mut tmp:  Next = Next::worst();
+            for opt in &self.minute {
+                let val = opt.next(current_min, 0..60);
+                tmp.value = val;
+                tmp.overflow = val <= current_min;
+                if tmp < best {
+                    best = tmp;
+                }
+            }
+        };
+
+
+
+        now
+    }
+}
+

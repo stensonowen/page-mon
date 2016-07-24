@@ -21,7 +21,7 @@
 mod event;
 pub mod croncfg;
 pub mod ast;
-use ast::*;
+//use ast::*;
 use event::HasNext;
 
 fn main() {
@@ -29,11 +29,12 @@ fn main() {
     let   valid_cmd = croncfg::parse_Command("10-20/7 2 3-5 */4 7 https://valid.com");
     assert!(valid_cmd.is_ok());
     let vt = valid_cmd.unwrap().time;
-    for entry in &vt.minute { assert!(entry.verify(0..60)); }
-    for entry in &vt.hour   { assert!(entry.verify(0..24)); }
-    for entry in &vt.date   { assert!(entry.verify(1..32)); } //variable
-    for entry in &vt.month  { assert!(entry.verify(1..13)); }
-    for entry in &vt.weekday{ assert!(entry.verify(0.. 8)); } //0 = 7 = SUN
+    for entry in &vt.minute { assert!(entry.verify(&(0..60))); }
+    for entry in &vt.hour   { assert!(entry.verify(&(0..24))); }
+    for entry in &vt.date   { assert!(entry.verify(&(1..32))); } //variable
+    for entry in &vt.month  { assert!(entry.verify(&(1..13))); }
+    for entry in &vt.weekday{ assert!(entry.verify(&(0.. 8))); } //0 = 7 = SUN
+    assert!(vt.verify());
     assert!(vt.minute[0]    .next(0, 0..60) == 14);
     assert!(vt.hour[0]      .next(3, 0..24) ==  2);
     assert!(vt.date[0]      .next(5, 1..32) ==  3);
@@ -43,12 +44,14 @@ fn main() {
     let invalid_cmd = croncfg::parse_Command("60 */0 0 2-1 5-9 https://invalid.com");
     assert!(invalid_cmd.is_ok());
     let it = invalid_cmd.unwrap().time;
-    for entry in it.minute  { assert!(!entry.verify(0..60)); }
-    for entry in it.hour    { assert!(!entry.verify(0..24)); }
-    for entry in it.date    { assert!(!entry.verify(1..32)); } //variable
-    for entry in it.month   { assert!(!entry.verify(1..13)); }
-    for entry in it.weekday { assert!(!entry.verify(0.. 8)); } //0 = 7 = SUN
+    for entry in &it.minute  { assert!(!entry.verify(&(0..60))); }
+    for entry in &it.hour    { assert!(!entry.verify(&(0..24))); }
+    for entry in &it.date    { assert!(!entry.verify(&(1..32))); } //variable
+    for entry in &it.month   { assert!(!entry.verify(&(1..13))); }
+    for entry in &it.weekday { assert!(!entry.verify(&(0.. 8))); } //0 = 7 = SUN
+    assert!(!it.verify());
     
+
     let test_cmd = croncfg::parse_Command("1 1 30-31 1 1 https://invalid.com");
     assert!(test_cmd.is_ok());
     let tm = test_cmd.unwrap().time;
