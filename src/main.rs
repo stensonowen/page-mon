@@ -49,6 +49,11 @@ fn main() {
     for entry in it.month   { assert!(!entry.verify(1..13)); }
     for entry in it.weekday { assert!(!entry.verify(0.. 8)); } //0 = 7 = SUN
     
+    let test_cmd = croncfg::parse_Command("1 1 30-31 1 1 https://invalid.com");
+    assert!(test_cmd.is_ok());
+    let tm = test_cmd.unwrap().time;
+    let ref mon = tm.month[0];
+    println!("Next: {}", mon.next(25, 1..32));
 
     
 

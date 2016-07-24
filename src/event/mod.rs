@@ -39,16 +39,49 @@
  */
 
 extern crate hyper;
+extern crate chrono;
 //use std::time;
 use std::{ops, cmp};
 use ast::*;
+use event::chrono::Datelike;
 //mod crontime;
 
 
 pub trait HasNext {
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8;
+    //get next value to trigger an event given its current value 
+    // (which did not trigger it) and the valid range (which 
+    // varied depending on which field this is.
+    //If the result is ≤ current, then this field overflowed by 1.
+    //Can be buggy on the month field when the max varies. Might
+    // not overflow predictably.
+
+    fn next_month(&self, current: u8) -> (u8,u8);
+    //similar to `next`, but takes into account the variable 
+    // ranges. Also returns both the `next` month value and the
+    // number of times it overflowed (this is the only field 
+    // where that can be ≥ 2 or cannot be predicted as `next` does.
+
     fn verify(&self, valid: ops::Range<u8>) -> bool;
+    //returns whether this value is valid. 
+    //Examples of invalid values include constants outside the 
+    // the valid range (e.g. 100) and ranges like 5..2.
 }
+
+fn is_leap_year(year: i32) -> bool {
+    // https://en.wikipedia.org/wiki/Leap_year#Algorithm
+    // chrono's `year` is an i32 but only needs to be u16
+    if year % 4 != 0 {
+        false 
+    } else if year % 100 != 0 {
+        true 
+    } else if year % 400 != 0 {
+        false
+    } else {
+        true
+    }
+}
+
 
 impl HasNext for ContVal {
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
@@ -76,6 +109,36 @@ impl HasNext for ContVal {
             }
         }
     }
+    fn next_month(&self, current: u8) -> (u8,u8) {
+        //`max` depends on which month and year it is. `current`
+        // should always refer to the month the program is executing
+        let month_lens: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];
+        //30: sep april june november
+        let max: u8 = {
+            if current != 2 {
+                month_lens[current as usize]
+            } else {
+                let year = chrono::Local::today().year();
+                if is_leap_year(year) {
+                    29
+                } else {
+                    29
+                }
+            }
+
+        };
+        match *self {
+            ContVal::Asterisk   => {
+                let next = self.next(current, 1..2);
+                let overflow = match next <= current {
+                    true  => 1,
+                    false => 0,
+                };
+                (next,overflow)
+            },
+            _ => (0,0),
+        }
+    }
     fn verify(&self, valid: ops::Range<u8>) -> bool {
         match *self {
             ContVal::Asterisk => true,
@@ -89,6 +152,9 @@ impl HasNext for ContVal {
 }
 
 impl HasNext for Value {
+    fn next_month(&self, current: u8) -> (u8,u8) {
+        (0,0)
+    }
     fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
         match *self {
             Value::CV(ref cv)   => cv.next(current, range),
