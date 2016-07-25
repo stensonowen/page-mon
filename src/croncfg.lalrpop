@@ -18,7 +18,11 @@
 //  More information in the enclosed `LICENSE' file
 
 
+//This is a LALRPOP filetype which defines an attribute grammar 
+// and which build.rs will compile into croncfg.rs.
 // :setf rust
+// vim: set syntax=rust:
+
 use std::str::FromStr;
 use ast;
 
@@ -26,6 +30,7 @@ grammar;
 
 // Cron Grammar: 
 //  mostly based on http://linux.die.net/man/5/crontab
+//  see README for production rules
 // 
 // Note about whitespace:
 //      LALRPOP does not treat whitespace as a token. Instead space and tab 
@@ -78,7 +83,7 @@ Comment: ast::Line = {
 };
 
 Entry_Day = {
-    Entry,
+    <Entry>,
     <d:DayOfWeek> => vec![ast::Value::Constant(d)],
 };
 
@@ -105,9 +110,9 @@ Value: ast::Value = {
 
 Skip = "/" <Num>;
 
-ContVal: ast::ContVal = {
+ContVal: ast::ContVal = {   
+    // "Continuous Values", i.e. not a skip or constant
     "*"                 => ast::ContVal::Asterisk,
-    //<n:Num>             => ast::ContVal::Constant(n),
     <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
         //TODO: would this be the place to corrent the range 
         // upper bound asymmetry?

@@ -16,7 +16,8 @@ I decided to use [lalrpop](https://crates.io/crates/lalrpop) to define a grammar
 I decided against implementing [non-standard special character](https://en.wikipedia.org/wiki/Cron#Non-Standard_Characters) support (i.e. `L`,`W`,`?`,`#`) because it lowered my odds of ever completing this project and would probably make a mess of the code.
 The new grammar is mostly based on the cron spec defined in the man page but is more flexible in a few areas (I don't believe cron uses an attribute grammar). 
 It took longer to figure out lalrpop and construct the grammar/AST than it would have to just mimic cron functionality using string manipulations, but this way was more fun and the result is probably better. 
-Here is the context-free grammar used to parse the cron-like config file, where a dagger(`†`) indicates that a feature of lalrpop was used to simplify otherwise verbose constructs via regular expressions or macros. 
+The attribute grammar is defined in [croncfg.lalrpop](src/croncfg.lalrpop) (which lalrpop will compile into croncfg.rs) and the AST is in [ast.rs](src/ast.rs). 
+Here is the context-free grammar used to parse the cron-like config file, where a dagger (`†`) indicates that a feature of lalrpop was used to simplify otherwise verbose constructs via regular expressions or macros. 
 
 ```
     Line        →   Command  |  Comment
