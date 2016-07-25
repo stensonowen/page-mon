@@ -43,11 +43,10 @@ extern crate chrono;
 use self::chrono::{Local, datetime, TimeZone};
 use event::chrono::{Timelike, Datelike};
 
-extern crate num;
-use self::num::ToPrimitive;
-//do I really have to use another crate just to be able to cast a generic?
-
 use std::{ops, cmp, u8};
+
+mod next;
+use event::next::Next;
 
 use ast::*;
 //use event::chrono::Datelike;
@@ -195,68 +194,6 @@ impl HasNext for Value {
     }
 }
 
-fn is_leap_year(year: u16) -> bool {
-    // https://en.wikipedia.org/wiki/Leap_year#Algorithm
-    if year % 4 != 0 {
-        false 
-    } else if year % 100 != 0 {
-        true 
-    } else if year % 400 != 0 {
-        false
-    } else {
-        true
-    }
-}
-
-fn is_valid_date(date: u8, month: u8, year: u16) -> bool {
-    //invalid date only happens when date > DaysInMonth
-    let feb_len = match is_leap_year(year) {
-        true  => 29,
-        false => 28,
-    };
-    let month_lens = [31,feb_len,31,30,31,30,31,31,30,31,30,31];
-    date <= month_lens[month as usize]
-}
-
-
-//Next: calling .next() on a Value will return a u8, from which
-//it can be determined whether that Value overflowed.
-//This state needs to be easily stored/compared.
-#[derive(PartialEq, Clone, Copy, Debug)]
-struct Next {
-    value:      u8,
-    overflow:   bool,
-}
-
-impl Next {
-    fn worst() -> Next {
-        Next {
-            value:      u8::MAX,
-            overflow:   true,
-        }
-    }
-    fn from_n<T: ToPrimitive>(n: T) -> Next {
-        Next {
-            value:      n.to_u8().unwrap(),
-            overflow:   false,
-        }
-    }
-}
-
-impl PartialOrd for Next {
-    fn partial_cmp(&self, other:&Next) -> Option<cmp::Ordering> {
-        if self == other {
-            Some(cmp::Ordering::Equal)
-        } else if self.overflow == false && other.overflow {
-            Some(cmp::Ordering::Less)
-        } else if self.overflow == other.overflow 
-                && self.value < other.value {
-            Some(cmp::Ordering::Less)
-        } else {
-            Some(cmp::Ordering::Greater)
-        }
-    }
-}
 
 //Valid ranges for each field
 //Lower bound included, upper bound excluded
@@ -270,11 +207,10 @@ const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
 fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next { 
     let current = current as u8;
     let mut best: Next = Next::worst();
-    let mut tmp:  Next = Next::worst();
+    let mut tmp:  Next;
     for opt in field.iter() {
         let val = opt.next(current, &range);
-        tmp.value = val;
-        tmp.overflow = val <= current;
+        tmp = Next::new(val, val<=current);
         if tmp < best {
             best = tmp;
         }
@@ -301,8 +237,6 @@ impl Time {
         //unless one is Asterisk, then increment by the other
         //unless both are Asterisk, in which case it doesn't matter
 
-        let ranges = vec![MINUTE_RANGE, HOUR_RANGE,
-                    DATE_RANGE, MONTH_RANGE, WEEKDAY_RANGE];
         let data = vec![(&self.minute,  now.minute(),   MINUTE_RANGE),
                         (&self.hour,    now.hour(),     HOUR_RANGE),
                         (&self.date,    now.day(),      DATE_RANGE),
@@ -316,15 +250,15 @@ impl Time {
                     
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
-            if result[i].overflow == false {
+            if result[i].overflowed() == false {
                 break;
             }
         
         }
 
-        let dt_opt = Local.ymd_opt(result[4].value as i32, 
-                                   result[3].value as u32,
-                                   result[2].value as u32);
+        let dt_opt = Local.ymd_opt(result[4].as_u32() as i32, 
+                                   result[3].as_u32(),
+                                   result[2].as_u32());
         if dt_opt == chrono::offset::LocalResult::None {
             //invalid dates can arise because field.next() treats all 
             //months as if they have 31 days. At most this will need to
@@ -332,8 +266,8 @@ impl Time {
             //where Mar N must be valid because March has 31 days.
             self.next()
         } else {
-            dt_opt.unwrap().and_hms(result[1].value as u32,
-                                    result[0].value as u32,
+            dt_opt.unwrap().and_hms(result[1].as_u32(),
+                                    result[0].as_u32(),
                                     0)
         }
     }
