@@ -244,19 +244,25 @@ impl Time {
                         (&self.weekday, now.weekday().num_days_from_sunday(),  
                                                         WEEKDAY_RANGE)];
         //store current values, to be replaced as applicable
+        
+        //`year` field shenanigans: `year` is the only field than can 
+        // overflow a u8. But we technically need to store the year
+        // to use this general solution for tracking overflow.
+        // So pretend the year is 0 in `result` and add the current 
+        // year back (to either 0 or 1) in the dt_opt ymd assignment
         let mut result: [Next; 5] = [Next::from_n(now.minute()),
                     Next::from_n(now.hour()),  Next::from_n(now.day()),
-                    Next::from_n(now.month()), Next::from_n(now.year())];
+                    //Next::from_n(now.month()), Next::from_n(now.year())];
+                    Next::from_n(now.month()), Next::from_n(0)];
                     
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
             if result[i].overflowed() == false {
                 break;
             }
-        
         }
 
-        let dt_opt = Local.ymd_opt(result[4].as_u32() as i32, 
+        let dt_opt = Local.ymd_opt(result[4].as_u32() as i32 + now.year(), 
                                    result[3].as_u32(),
                                    result[2].as_u32());
         if dt_opt == chrono::offset::LocalResult::None {
