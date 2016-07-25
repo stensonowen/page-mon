@@ -27,7 +27,7 @@ extern crate chrono;
 
 fn main() {
 
-    let   valid_cmd = croncfg::parse_Command("10-20/7 2 3-5 */4 7 https://valid.com");
+    let   valid_cmd = croncfg::parse_Command("10-20/7 2 3-5 */5 7 https://valid.com");
     assert!(valid_cmd.is_ok());
     let vt = valid_cmd.unwrap().time;
     for entry in &vt.minute { assert!(entry.verify(&(0..60))); }
@@ -39,7 +39,7 @@ fn main() {
     assert!(vt.minute[0]    .next(0, &(0..60)) == 14);
     assert!(vt.hour[0]      .next(3, &(0..24)) ==  2);
     assert!(vt.date[0]      .next(5, &(1..32)) ==  3);
-    assert!(vt.month[0]     .next(12,&(1..13)) ==  4);
+    assert!(vt.month[0]     .next(12,&(1..13)) ==  5);
     assert!(vt.weekday[0]   .next(7, &(0.. 8)) ==  7);
 
     let invalid_cmd = croncfg::parse_Command("60 */0 0 2-1 5-9 https://invalid.com");
@@ -56,7 +56,7 @@ fn main() {
     let test_cmd = croncfg::parse_Command("59 1 30-31 1 1 https://invalid.com");
     assert!(test_cmd.is_ok());
     let tm = test_cmd.unwrap().time;
-    let ref mon = tm.date[0];
+    //let ref mon = tm.date[0];
     println!("Time: {:?}", tm);
     println!("Now:  {}", chrono::Local::now());
     println!("Next: {}", tm.next());

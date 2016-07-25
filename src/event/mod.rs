@@ -106,16 +106,15 @@ impl HasNext for ContVal {
     fn next(&self, current: u8, range: &ops::Range<u8>) -> u8 {
         //safe to assume current \in range
         //TODO: track overflow. field overflowed by 1 if 
-        // next<=current or 0 otherwise.
+        // next<current or 0 otherwise.
         //TODO: verify resulting date is valid. May need to call 
         // next() up to three more times* to result in a valid date
         // in the case of `current:2`, `range:29..32`.
         // And remember to track the overflow again.
         match *self {
             ContVal::Asterisk       => {
-                let guess = current + 1;
-                if guess < range.end {
-                    guess
+                if current < range.end {
+                    current  
                 } else {
                     range.start
                 }
@@ -125,9 +124,8 @@ impl HasNext for ContVal {
                 //DONE: verify min < max
                 //TODO: increment max by one: cron ranges are inclusive
                 //DONE: verify min and max both in range
-                let guess = current + 1;
-                if guess >= min && guess < max {
-                    guess
+                if current >= min && current < max {
+                    current
                 } else {
                     min
                 }
@@ -153,34 +151,25 @@ impl HasNext for Value {
             Value::CV(ref cv)   => cv.next(current, &range),
             Value::Constant(c)  => c,
             Value::Skip(ref cv, mult) => {
-                let start = match *cv {
-                    ContVal::Asterisk => {
-                        // `*/mult`
-                        //need a multiple of n that is greater than current
-                        //by as small a margin as possible
-                        //DONE: verify mult ≠ 0
-                        current
-                    },
-                    ContVal::Range(min,max) => {
-                        // `min-max/mult`
-                        //event wasn't necessarily fired at `current` time
-                        //DONE: verify min and max are in range and min < max
-                        if current >= max {
-                            min-1
-                        } else {
-                            cmp::max(current,min-1)
-                        }
-                    },
+                let (min, max) = match *cv {
+                    ContVal::Asterisk => (range.start, range.end),
+                    ContVal::Range(min,max) => (min, max),
                 };
-                //hard to predict whether `guess` will exceed the hard max
-                //there's probably a better way to do this?
-                let guess = (start / mult + 1) * mult;
-                if guess >= range.end {
-                    self.next(0, &range)
-                } else {
+                let start = cmp::max(current, min);
+                let guess = ((start-1)/mult+1)*mult;
+                if guess < max {
+                    //can't be < range.start
+                    //in range: this is the answer
                     guess
+                } else {
+                    //the smallest multiple of `skip` that
+                    //exceeds `current` also exceeds `end`,
+                    //so it overflowed.
+                    //0
+                    //TODO: verify that there is at least one valid 
+                    //answer. e.g. nothing like `20-25/9`
+                    ((min-1)/mult+1)*mult
                 }
-
             }
         }
     }
@@ -205,6 +194,8 @@ const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
 
 
 fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next { 
+    //return the soonest valid time by calling .next() on all 
+    // comma-delimited Values
     let current = current as u8;
     let mut best: Next = Next::worst();
     let mut tmp:  Next;
@@ -232,17 +223,23 @@ impl Time {
                 fv.iter().all(|ref f| f.verify(range)))
     }
     pub fn next(&self) -> datetime::DateTime<Local> {
+        //call .next() on all fields because `current` might not be valid.
+        //now if `current` is valid, .next() will return it.
+        //if a field overflows, that means .next() must be called once more.
         let now = Local::now();
+        //TODO: add weekday part
         //increment by date or weekday, whichever is less
         //unless one is Asterisk, then increment by the other
         //unless both are Asterisk, in which case it doesn't matter
 
-        let data = vec![(&self.minute,  now.minute(),   MINUTE_RANGE),
+        //need to increment now.minute by 1, otherwise if `current` is
+        //valid it'll just return it (which we don't want)
+        let data = vec![(&self.minute,  now.minute()+1, MINUTE_RANGE),
                         (&self.hour,    now.hour(),     HOUR_RANGE),
                         (&self.date,    now.day(),      DATE_RANGE),
-                        (&self.month,   now.month(),    MONTH_RANGE),
-                        (&self.weekday, now.weekday().num_days_from_sunday(),  
-                                                        WEEKDAY_RANGE)];
+                        (&self.month,   now.month(),    MONTH_RANGE)];
+                        //(&self.weekday, now.weekday().num_days_from_sunday(),  
+                        //                                WEEKDAY_RANGE)];
         //store current values, to be replaced as applicable
         
         //`year` field shenanigans: `year` is the only field than can 
@@ -250,19 +247,26 @@ impl Time {
         // to use this general solution for tracking overflow.
         // So pretend the year is 0 in `result` and add the current 
         // year back (to either 0 or 1) in the dt_opt ymd assignment
-        let mut result: [Next; 5] = [Next::from_n(now.minute()),
+        let mut result: [Next; 4] = [Next::from_n(now.minute()),
                     Next::from_n(now.hour()),  Next::from_n(now.day()),
                     //Next::from_n(now.month()), Next::from_n(now.year())];
-                    Next::from_n(now.month()), Next::from_n(0)];
+                    Next::from_n(now.month())];//, Next::from_n(0)];
                     
+        let mut overflowed = true;
+
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
-            if result[i].overflowed() == false {
-                break;
+            overflowed &= result[i].overflowed();
+            if overflowed {
+                //everything from `minute` through i-1 overflowed, so 
+                // even though result[i] is valid, find the *next* value
+                result[i] = increment(field, result[i].as_u32(), range);
             }
+            //if result[i].overflowed() == false { break; }
         }
+        let year_overflow = result[3].overflowed() as i32;
 
-        let dt_opt = Local.ymd_opt(result[4].as_u32() as i32 + now.year(), 
+        let dt_opt = Local.ymd_opt(now.year() + year_overflow, 
                                    result[3].as_u32(),
                                    result[2].as_u32());
         if dt_opt == chrono::offset::LocalResult::None {
@@ -271,6 +275,8 @@ impl Time {
             //be called thrice, i.e. Feb 29 -> Feb 30 -> Feb 31 -> Mar N,
             //where Mar N must be valid because March has 31 days.
             self.next()
+                //is this going to actually do anything different?
+                //pretty sure .next() didn't modify self, right? so it can't?
         } else {
             dt_opt.unwrap().and_hms(result[1].as_u32(),
                                     result[0].as_u32(),
