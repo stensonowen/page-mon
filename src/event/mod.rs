@@ -38,13 +38,19 @@
  */
 
 extern crate hyper;
+
 extern crate chrono;
-use self::chrono::{Local, datetime};
-//use std::time;
+use self::chrono::{Local, datetime, TimeZone};
+use event::chrono::{Timelike, Datelike};
+
+extern crate num;
+use self::num::ToPrimitive;
+//do I really have to use another crate just to be able to cast a generic?
+
 use std::{ops, cmp, u8};
+
 use ast::*;
 //use event::chrono::Datelike;
-use event::chrono::{Timelike, Datelike};
 //mod crontime;
 
 
@@ -223,16 +229,16 @@ struct Next {
 }
 
 impl Next {
-    fn zero()  -> Next {
-        Next {
-            value:      0u8,
-            overflow:   false,
-        }
-    }
     fn worst() -> Next {
         Next {
             value:      u8::MAX,
             overflow:   true,
+        }
+    }
+    fn from_n<T: ToPrimitive>(n: T) -> Next {
+        Next {
+            value:      n.to_u8().unwrap(),
+            overflow:   false,
         }
     }
 }
@@ -303,7 +309,11 @@ impl Time {
                         (&self.month,   now.month(),    MONTH_RANGE),
                         (&self.weekday, now.weekday().num_days_from_sunday(),  
                                                         WEEKDAY_RANGE)];
-        let mut result: [Next; 6] = [Next::zero(); 6];
+        //store current values, to be replaced as applicable
+        let mut result: [Next; 5] = [Next::from_n(now.minute()),
+                    Next::from_n(now.hour()),  Next::from_n(now.day()),
+                    Next::from_n(now.month()), Next::from_n(now.year())];
+                    
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
             if result[i].overflow == false {
@@ -312,9 +322,20 @@ impl Time {
         
         }
 
-        let v = vec![increment];
-
-        now
+        let dt_opt = Local.ymd_opt(result[4].value as i32, 
+                                   result[3].value as u32,
+                                   result[2].value as u32);
+        if dt_opt == chrono::offset::LocalResult::None {
+            //invalid dates can arise because field.next() treats all 
+            //months as if they have 31 days. At most this will need to
+            //be called thrice, i.e. Feb 29 -> Feb 30 -> Feb 31 -> Mar N,
+            //where Mar N must be valid because March has 31 days.
+            self.next()
+        } else {
+            dt_opt.unwrap().and_hms(result[1].value as u32,
+                                    result[0].value as u32,
+                                    0)
+        }
     }
 }
 
