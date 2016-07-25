@@ -49,7 +49,7 @@ use event::chrono::{Timelike, Datelike};
 
 
 pub trait HasNext {
-    fn next(&self, current: u8, range: ops::Range<u8>) -> u8;
+    fn next(&self, current: u8, range: &ops::Range<u8>) -> u8;
     //get next value to trigger an event given its current value 
     // (which did not trigger it) and the valid range (which 
     // varied depending on which field this is.
@@ -98,7 +98,7 @@ pub trait HasNext {
 
 
 impl HasNext for ContVal {
-    fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
+    fn next(&self, current: u8, range: &ops::Range<u8>) -> u8 {
         //safe to assume current \in range
         //TODO: track overflow. field overflowed by 1 if 
         // next<=current or 0 otherwise.
@@ -143,9 +143,9 @@ impl HasNext for ContVal {
 }
 
 impl HasNext for Value {
-    fn next(&self, current: u8, range: ops::Range<u8>) -> u8 {
+    fn next(&self, current: u8, range: &ops::Range<u8>) -> u8 {
         match *self {
-            Value::CV(ref cv)   => cv.next(current, range),
+            Value::CV(ref cv)   => cv.next(current, &range),
             Value::Constant(c)  => c,
             Value::Skip(ref cv, mult) => {
                 let start = match *cv {
@@ -171,7 +171,7 @@ impl HasNext for Value {
                 //there's probably a better way to do this?
                 let guess = (start / mult + 1) * mult;
                 if guess >= range.end {
-                    self.next(0, range)
+                    self.next(0, &range)
                 } else {
                     guess
                 }
@@ -216,17 +216,23 @@ fn is_valid_date(date: u8, month: u8, year: u16) -> bool {
 //Next: calling .next() on a Value will return a u8, from which
 //it can be determined whether that Value overflowed.
 //This state needs to be easily stored/compared.
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 struct Next {
     value:      u8,
     overflow:   bool,
 }
 
 impl Next {
+    fn zero()  -> Next {
+        Next {
+            value:      0u8,
+            overflow:   false,
+        }
+    }
     fn worst() -> Next {
         Next {
-            value:  u8::MAX,
-            overflow: true,
+            value:      u8::MAX,
+            overflow:   true,
         }
     }
 }
@@ -254,6 +260,22 @@ const DATE_RANGE:   ops::Range<u8> = 1..32;
 const MONTH_RANGE:  ops::Range<u8> = 1..13;
 const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
 
+
+fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next { 
+    let current = current as u8;
+    let mut best: Next = Next::worst();
+    let mut tmp:  Next = Next::worst();
+    for opt in field.iter() {
+        let val = opt.next(current, &range);
+        tmp.value = val;
+        tmp.overflow = val <= current;
+        if tmp < best {
+            best = tmp;
+        }
+    }
+    best
+}
+
 impl Time {
     pub fn verify(&self) -> bool {
         //test all elements in the minute, hour, date, etc. vectors
@@ -267,29 +289,30 @@ impl Time {
         zip.all(|(&fv, ref range)| 
                 fv.iter().all(|ref f| f.verify(range)))
     }
-    fn next(&self) -> datetime::DateTime<Local> {
+    pub fn next(&self) -> datetime::DateTime<Local> {
         let now = Local::now();
         //increment by date or weekday, whichever is less
-        //let (mut minute, mut hour)  = (now.minute(), now.hour());
-        //let (mut date, mut weekday) = (now.date(),   now.weekday());
-        //let (mut month, mut year)   = (now.month(),  now.year());
+        //unless one is Asterisk, then increment by the other
+        //unless both are Asterisk, in which case it doesn't matter
 
-        //let minute = self.minute.next(now.minute(), 0..60);
-        let minute = {
-            let current_min = now.minute() as u8;
-            let mut best: Next = Next::worst();
-            let mut tmp:  Next = Next::worst();
-            for opt in &self.minute {
-                let val = opt.next(current_min, 0..60);
-                tmp.value = val;
-                tmp.overflow = val <= current_min;
-                if tmp < best {
-                    best = tmp;
-                }
+        let ranges = vec![MINUTE_RANGE, HOUR_RANGE,
+                    DATE_RANGE, MONTH_RANGE, WEEKDAY_RANGE];
+        let data = vec![(&self.minute,  now.minute(),   MINUTE_RANGE),
+                        (&self.hour,    now.hour(),     HOUR_RANGE),
+                        (&self.date,    now.day(),      DATE_RANGE),
+                        (&self.month,   now.month(),    MONTH_RANGE),
+                        (&self.weekday, now.weekday().num_days_from_sunday(),  
+                                                        WEEKDAY_RANGE)];
+        let mut result: [Next; 6] = [Next::zero(); 6];
+        for (i, &(field, current, ref range)) in data.iter().enumerate() {
+            result[i] = increment(field, current, range);
+            if result[i].overflow == false {
+                break;
             }
-        };
+        
+        }
 
-
+        let v = vec![increment];
 
         now
     }

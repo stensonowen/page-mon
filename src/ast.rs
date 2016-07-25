@@ -27,6 +27,8 @@
 //This has the drawback of I'm not sure if it's possible. Also apparently
 //generic typedefs are a no-no. I'll leave it alone for now.
 
+//TODO: don't forget that 0 = 7 = Sunday
+
 use std::fmt::{Debug, Formatter, Error};
 
 

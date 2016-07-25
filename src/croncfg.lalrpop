@@ -109,6 +109,8 @@ ContVal: ast::ContVal = {
     "*"                 => ast::ContVal::Asterisk,
     //<n:Num>             => ast::ContVal::Constant(n),
     <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
+        //TODO: would this be the place to corrent the range 
+        // upper bound asymmetry?
 };
     
 //Case insensitive by using regex with the `i` flag

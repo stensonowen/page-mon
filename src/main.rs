@@ -23,6 +23,7 @@ pub mod croncfg;
 pub mod ast;
 //use ast::*;
 use event::HasNext;
+extern crate chrono;
 
 fn main() {
 
@@ -35,11 +36,11 @@ fn main() {
     for entry in &vt.month  { assert!(entry.verify(&(1..13))); }
     for entry in &vt.weekday{ assert!(entry.verify(&(0.. 8))); } //0 = 7 = SUN
     assert!(vt.verify());
-    assert!(vt.minute[0]    .next(0, 0..60) == 14);
-    assert!(vt.hour[0]      .next(3, 0..24) ==  2);
-    assert!(vt.date[0]      .next(5, 1..32) ==  3);
-    assert!(vt.month[0]     .next(12,1..13) ==  4);
-    assert!(vt.weekday[0]   .next(7, 0.. 8) ==  7);
+    assert!(vt.minute[0]    .next(0, &(0..60)) == 14);
+    assert!(vt.hour[0]      .next(3, &(0..24)) ==  2);
+    assert!(vt.date[0]      .next(5, &(1..32)) ==  3);
+    assert!(vt.month[0]     .next(12,&(1..13)) ==  4);
+    assert!(vt.weekday[0]   .next(7, &(0.. 8)) ==  7);
 
     let invalid_cmd = croncfg::parse_Command("60 */0 0 2-1 5-9 https://invalid.com");
     assert!(invalid_cmd.is_ok());
@@ -52,13 +53,15 @@ fn main() {
     assert!(!it.verify());
     
 
-    let test_cmd = croncfg::parse_Command("1 1 30-31 1 1 https://invalid.com");
+    let test_cmd = croncfg::parse_Command("59 1 30-31 1 1 https://invalid.com");
     assert!(test_cmd.is_ok());
     let tm = test_cmd.unwrap().time;
     let ref mon = tm.date[0];
-    //println!("Time: {:?}", tm);
-    println!("Field: {:?}", mon);
-    println!("Next: {}", mon.next(25, 1..32));
+    println!("Time: {:?}", tm);
+    println!("Now:  {}", chrono::Local::now());
+    println!("Next: {}", tm.next());
+    //println!("Field: {:?}", mon);
+    //println!("Next: {}", mon.next(25, 1..32));
 
     
 
