@@ -156,7 +156,13 @@ impl HasNext for Value {
                     ContVal::Range(min,max) => (min, max),
                 };
                 let start = cmp::max(current, min);
-                let guess = ((start-1)/mult+1)*mult;
+                //let guess = ((start-1)/mult+1)*mult;
+                //let guess = (((start.wrapping_sub(1))/mult)
+                //             .wrapping_add(1)).wrapping_mul(mult);
+                let mult_ = mult as i16;
+                let start_ = start as i16;
+                let guess: i16 = ((start_-1)/mult_+1)*mult_;
+                let guess = guess as u8;
                 if guess < max {
                     //can't be < range.start
                     //in range: this is the answer
@@ -168,7 +174,9 @@ impl HasNext for Value {
                     //0
                     //TODO: verify that there is at least one valid 
                     //answer. e.g. nothing like `20-25/9`
-                    ((min-1)/mult+1)*mult
+                    //((min-1)/mult+1)*mult
+                    //(((min.wrapping_sub(1))/mult).wrapping_add(1)).wrapping_mul(mult)
+                    (((min as i16 -1)/mult_+1)*mult_) as u8
                 }
             }
         }
@@ -285,17 +293,16 @@ impl Time {
 
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
-            overflowed &= result[i].overflowed();
+            //overflowed &= result[i].overflowed();
             if overflowed {
-                println!("Field {} overflowed", i);
                 //everything from `minute` through i-1 overflowed, so 
                 // even though result[i] is valid, find the *next* value
                 result[i] = increment(field, result[i].as_u32(), range);
             }
-            //if result[i].overflowed() == false { break; }
+            overflowed = result[i].overflowed();
         }
-        let year_overflow = result[3].overflowed() as i32;
-        //let year_overflow = overflowed as i32;//??
+        //let year_overflow = result[3].overflowed() as i32;
+        let year_overflow = overflowed as i32;//??
         //pretty sure this should work. result[3] can only be overflowed k
 
         let mut dt_opt = Local.ymd_opt(now.year() + year_overflow, 
