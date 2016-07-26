@@ -291,11 +291,22 @@ impl Time {
                     
         let mut overflowed = true;
 
+        //TODO      FIX THIS LOGIC
+        //TODO .next() must be called on all fields to verify they're all valid 
+        //TODO If a .next() call overflows, .next() should be called on the 
+        //          next largest field again, because it overflowed
+        //TODO If .next() is called and changes any field's value (i.e. it's no
+        //          longer `current), then all lesser fields should be reset
+        //          to their minimum valid values. c.f. 09 -> 10.
+        //TODO Figure out a way to do this without making spaghetti
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
+            if result[i].overflowed() {
+                //this value should be reset
+                result[i] = increment(field, range.start, range);
             //overflowed &= result[i].overflowed();
             if overflowed {
-                //everything from `minute` through i-1 overflowed, so 
+                //previous field overflowed, so 
                 // even though result[i] is valid, find the *next* value
                 result[i] = increment(field, result[i].as_u32(), range);
             }
