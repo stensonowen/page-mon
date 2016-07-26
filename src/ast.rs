@@ -44,7 +44,7 @@ pub struct Command {
     pub url:    String,
 }
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct Time {
     pub minute:     Entry,
     pub hour:       Entry,
@@ -91,6 +91,16 @@ pub const ZERO: Value = Value::Constant(0);
 pub const ONE:  Value = Value::Constant(1);
 pub const STAR: Value = Value::CV(ContVal::Asterisk);
 
+impl Debug for Time {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
+            try!(write!(fmt, "Time Object:\n"));
+            try!(write!(fmt, "\tminute:\t\t{:?}\n", self.minute));
+            try!(write!(fmt, "\thour:\t\t{:?}\n",   self.hour));
+            try!(write!(fmt, "\tdate:\t\t{:?}\n",   self.date));
+            try!(write!(fmt, "\tmonth:\t\t{:?}\n",  self.month));
+            write!(fmt, "\tweekday:\t{:?}\n", self.weekday)
+    }
+}
 
 impl Debug for Line {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {

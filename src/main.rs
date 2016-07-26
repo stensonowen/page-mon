@@ -23,7 +23,9 @@ pub mod croncfg;
 pub mod ast;
 //use ast::*;
 use event::HasNext;
+
 extern crate chrono;
+use chrono::{Local, TimeZone};
 
 fn main() {
 
@@ -53,15 +55,18 @@ fn main() {
     assert!(!it.verify());
     
 
-    let test_cmd = croncfg::parse_Command("59 1 30-31 1 1 https://invalid.com");
-    assert!(test_cmd.is_ok());
-    let tm = test_cmd.unwrap().time;
-    //let ref mon = tm.date[0];
-    println!("Time: {:?}", tm);
-    println!("Now:  {}", chrono::Local::now());
-    println!("Next: {}", tm.next());
-    //println!("Field: {:?}", mon);
-    //println!("Next: {}", mon.next(25, 1..32));
+    //let test_cmd = croncfg::parse_Command("59 1 30-31 1 * https://invalid.com");
+    //assert!(test_cmd.is_ok());
+    //let tm = test_cmd.unwrap().time;
+    //println!("Time: {:?}", tm);
+    //println!("Now:  {}", chrono::Local::now());
+    //println!("Next: {}", tm.next());
+    
+    //trigger at 23:35 on some even day between the 13th and the 27th of any month
+    //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
+    let test1 = croncfg::parse_Command("35 23 13-27/2 * * https://test.com").unwrap().time;
+    assert!(Local.ymd(1970, 01, 14).and_hms(23, 35, 00) == 
+            test1.next_given_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
 
     
 

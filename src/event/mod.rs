@@ -201,7 +201,15 @@ fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next {
     let mut tmp:  Next;
     for opt in field.iter() {
         let val = opt.next(current, &range);
-        tmp = Next::new(val, val<=current);
+        //tmp = Next::new(val, val<=current);
+        tmp = Next::new(val, val<current);
+        //shit. is this a problem?
+        //overflow is calculated by checking `val<current`.
+        //The new .next() system returns `current` if it's valid
+        //So if minute=Const(42) and current=42, it'll return now
+        // which looks like an overflow (like it means NextHour:42)
+        // but it won't.
+        //BUT we call it on current_time + 1 minute
         if tmp < best {
             best = tmp;
         }
@@ -223,10 +231,31 @@ impl Time {
                 fv.iter().all(|ref f| f.verify(range)))
     }
     pub fn next(&self) -> datetime::DateTime<Local> {
+        //it is useful to be able to specify the `current` time for
+        //testing porpoises. otherwise eventually all tests that 
+        //compare against a hardcoded date would break :P
+        self.next_given_time(Local::now())
+    }
+
+    pub fn next_given_time(&self, 
+                           now: datetime::DateTime<Local>) 
+                            -> datetime::DateTime<Local> {
         //call .next() on all fields because `current` might not be valid.
         //now if `current` is valid, .next() will return it.
         //if a field overflows, that means .next() must be called once more.
-        let now = Local::now();
+        
+        //The Plus One problem:
+        //We can't call next() on `current_time` because it is useless to 
+        //us if the current time is valid, and field.next() is now inclusive.
+        //So we increment the `minute` field by 1 so that the earliest Next
+        //can be is one minute in the future. 
+        //Is it fine to increment now.minute() by 1, as in data[0][1]?
+        //Or should we call `let now = Local::now().with_minute(1)`?
+        //There shouldn't be a difference, right? Except the former relies
+        //on my code and the latter relies on chrono?
+        
+        //let now = Local::now();
+        
         //TODO: add weekday part
         //increment by date or weekday, whichever is less
         //unless one is Asterisk, then increment by the other
@@ -258,6 +287,7 @@ impl Time {
             result[i] = increment(field, current, range);
             overflowed &= result[i].overflowed();
             if overflowed {
+                println!("Field {} overflowed", i);
                 //everything from `minute` through i-1 overflowed, so 
                 // even though result[i] is valid, find the *next* value
                 result[i] = increment(field, result[i].as_u32(), range);
@@ -265,23 +295,33 @@ impl Time {
             //if result[i].overflowed() == false { break; }
         }
         let year_overflow = result[3].overflowed() as i32;
+        //let year_overflow = overflowed as i32;//??
+        //pretty sure this should work. result[3] can only be overflowed k
 
-        let dt_opt = Local.ymd_opt(now.year() + year_overflow, 
-                                   result[3].as_u32(),
-                                   result[2].as_u32());
-        if dt_opt == chrono::offset::LocalResult::None {
+        let mut dt_opt = Local.ymd_opt(now.year() + year_overflow, 
+                                       result[3].as_u32(),
+                                       result[2].as_u32());
+
+        while dt_opt == chrono::offset::LocalResult::None {
+            //invalid date, e.g. Feb 30. call next() at most 3 times
             //invalid dates can arise because field.next() treats all 
             //months as if they have 31 days. At most this will need to
             //be called thrice, i.e. Feb 29 -> Feb 30 -> Feb 31 -> Mar N,
             //where Mar N must be valid because March has 31 days.
-            self.next()
-                //is this going to actually do anything different?
-                //pretty sure .next() didn't modify self, right? so it can't?
-        } else {
-            dt_opt.unwrap().and_hms(result[1].as_u32(),
-                                    result[0].as_u32(),
-                                    0)
+            result[2] = increment(&self.date, result[2].as_u32(), &DATE_RANGE);
+            if result[2].overflowed() {
+                result[3] = increment(&self.month, result[3].as_u32(), &MONTH_RANGE);
+                //Dec has 31 days, so this will never overflow into the year field
+            }
+            dt_opt = Local.ymd_opt(now.year() + year_overflow, 
+                                   result[3].as_u32(),
+                                   result[2].as_u32());
         }
+
+        //hms fields shouldn't ever overwloe
+        dt_opt.unwrap().and_hms(result[1].as_u32(),
+                                result[0].as_u32(),
+                                0)
     }
 }
 
