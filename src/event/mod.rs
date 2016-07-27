@@ -299,11 +299,54 @@ impl Time {
         //          longer `current), then all lesser fields should be reset
         //          to their minimum valid values. c.f. 09 -> 10.
         //TODO Figure out a way to do this without making spaghetti
+        //
+        //maybe add an explicit `overflowed` value to .next()? 
+        //All fields must be .next()ed to verify they're valid.
+        //If the year  overflowed, reset the month, date, hour, and minute
+        //If the month overflowed, reset the        date, hour, and minute
+        //...
+        //If the minute overflowed, increment the hour
+        //If the  hour  overflowed, increment the date
+        //...
+        
+        //`results`: all fields are valid; fields are Minute, Hour, Day, Month
+        //Tuple: (Next, (&Vec<ast::Value>, u32, Range<u8>))
+        // (result of `increment`, (Entry, now.field(), start..end) )
+        let results = data.iter().map(|&(field, current, ref range)| 
+                                      increment(field, current, range))
+                                 .zip(data.iter());
+
+        //loop through the results backwards
+        let mut results_rev = results.rev();
+        //if a significant field overflowed, all less sig fields must be reset
+        //let most_significant_overflowed = results.rev().find(
+        let most_significant_overflowed = results_rev.find(
+                                            |&(next, _)| 
+                                            next.overflowed());
+        //all fields less significant than `most_sig...` should be reset
+        //i.e. call `increment` on them starting with their minimum value
+        let results2 = results_rev.map(|(_, &(field, _, ref range))| 
+                                       increment(field, 
+                                                 range.start as u32, 
+                                                 range))
+                                  //.rev();   //results_rev was reversed
+                                  ;
+        //now want to combine results and results2
+        //results  stores technically valid entries in each field
+        //results2 stores some in the beginning (i.e. the first `n` s.t. n≥0)
+        //  that had to be updated because a later field was updated
+        //we want to combine the `n` elements of res2 with the last 4-n of res.
+        //let results3 = results2.
+        
+
+
+
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
             if result[i].overflowed() {
                 //this value should be reset
-                result[i] = increment(field, range.start, range);
+                //result[i] = increment(field, range.start, range);
+            }
             //overflowed &= result[i].overflowed();
             if overflowed {
                 //previous field overflowed, so 
