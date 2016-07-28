@@ -30,10 +30,7 @@ use chrono::{Local, TimeZone};
 
 fn main() {
 
-    //trigger at 23:35 on some even day between the 13th and the 27th of any month
-    //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
-    let test1 = croncfg::parse_Command("35 23 13-27/2 * * https://test.com").unwrap().time;
-    assert!(Local.ymd(1970, 01, 14).and_hms(23, 35, 00) == 
-            test1.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
-
+    let test1 = croncfg::parse_Command("0 0 29-31 * * https://test.com").unwrap().time;
+    assert_eq!(Local.ymd(1970, 03, 29).and_hms(00, 00, 00), 
+               test1.next_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
 }

@@ -260,7 +260,7 @@ impl Time {
         //unless both are Asterisk, in which case it doesn't matter
         let date_data   = (&self.date,     now.day(),  DATE_RANGE);
         let wd_data     = (&self.weekday,  now.weekday().num_days_from_sunday(), 
-                           WEEKDAY_RANGE);
+                                                       WEEKDAY_RANGE);
         let deciding_field = {
             if self.weekday.contains(&Value::CV(ContVal::Asterisk)) {
                 date_data
@@ -326,15 +326,21 @@ impl Time {
                                        result[3].as_u32(),
                                        result[2].as_u32());
 
-        while dt_opt == chrono::offset::LocalResult::None {
+        while dt_opt == chrono::LocalResult::None {
+            println!("YEAR: {}, \tMONTH: {}, \tDAY: {}", 
+                     now.year() + year_overflow,
+                     result[3].as_u32(),
+                     result[2].as_u32());
+
             //invalid date, e.g. Feb 30. call next() at most 3 times
             //invalid dates can arise because field.next() treats all 
             //months as if they have 31 days. At most this will need to
             //be called thrice, i.e. Feb 29 -> Feb 30 -> Feb 31 -> Mar N,
             //where Mar N must be valid because March has 31 days.
-            result[2] = increment(&self.date, result[2].as_u32(), &DATE_RANGE);
+            //REMEMBER: increment() can return `current` if it's valid
+            result[2] = increment(&self.date, result[2].as_u32()+1, &DATE_RANGE);
             if result[2].overflowed() {
-                result[3] = increment(&self.month, result[3].as_u32(), &MONTH_RANGE);
+                result[3] = increment(&self.month, result[3].as_u32()+1, &MONTH_RANGE);
                 //Dec has 31 days, so this will never overflow into the year field
             }
             dt_opt = Local.ymd_opt(now.year() + year_overflow, 
