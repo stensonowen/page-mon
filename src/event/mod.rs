@@ -258,8 +258,25 @@ impl Time {
         //increment by date or weekday, whichever is less
         //unless one is Asterisk, then increment by the other
         //unless both are Asterisk, in which case it doesn't matter
+        let date_data   = (&self.date,     now.day(),  DATE_RANGE);
+        let wd_data     = (&self.weekday,  now.weekday().num_days_from_sunday(), 
+                           WEEKDAY_RANGE);
+        let deciding_field = {
+            if self.weekday.contains(&Value::CV(ContVal::Asterisk)) {
+                date_data
+            } else if self.date.contains(&Value::CV(ContVal::Asterisk)) {
+                wd_data
+            } else {
+                let date_increment  = increment(date_data.0, date_data.1, &date_data.2);
+                let wd_increment    = increment(  wd_data.0,   wd_data.1,   &wd_data.2);
+                if date_increment < wd_increment {
+                    date_data
+                } else {
+                    wd_data
+                }
+            }
+        };
         
-        //TODO: replace 4 with a constant?
 
         //store current values, to be replaced as applicable
         //need to increment now.minute by 1, otherwise if `current` is
@@ -267,7 +284,8 @@ impl Time {
         let data: [(&Vec<Value>, u32, ops::Range<u8>); 4] = 
                        [(&self.minute,  now.minute()+1, MINUTE_RANGE),
                         (&self.hour,    now.hour(),     HOUR_RANGE),
-                        (&self.date,    now.day(),      DATE_RANGE),
+                        //(&self.date,    now.day(),      DATE_RANGE),
+                        deciding_field,
                         (&self.month,   now.month(),    MONTH_RANGE)];
             //(&self.weekday, now.weekday().num_days_from_sunday(),WEEKDAY_RANGE)];
         

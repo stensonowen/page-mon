@@ -71,7 +71,7 @@ impl Time {
 pub type Entry = Vec<Value>;
 //separated by spaces
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Value {
     //separated by commas
     Skip(ContVal, u8),
@@ -79,7 +79,7 @@ pub enum Value {
     Constant(u8),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ContVal {
     //Values are contiguous, e.g. 1-5 or * but not */2 or 4
     Asterisk,
