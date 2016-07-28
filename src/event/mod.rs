@@ -313,30 +313,40 @@ impl Time {
         //Tuple: (Next, (&Vec<ast::Value>, u32, Range<u8>))
         // (result of `increment`, (Entry, now.field(), start..end) )
         let results = data.iter().map(|&(field, current, ref range)| 
-                                      increment(field, current, range))
-                                 .zip(data.iter());
+                                      increment(field, current, range));
+        let results_zipped = results.zip(data.iter());
 
         //loop through the results backwards
-        let mut results_rev = results.rev();
+        let mut results_rev = results_zipped.rev().enumerate();
         //if a significant field overflowed, all less sig fields must be reset
         //let most_significant_overflowed = results.rev().find(
-        let most_significant_overflowed = results_rev.find(
-                                            |&(next, _)| 
+        let most_sig_overflowed = results_rev.find(
+                                            |&(i, (next, _))| 
                                             next.overflowed());
+        //get index of most significant overflow. e.g. `month` is 3,
+        //  `date` is 2, `hour` is 1, `minute` is 0, and None is also 0
+        //Replace the first `n` elements of `results` with `results_rev`, 
+        //  where `n`=`most_sig_overflowed` 
+        let most_sig_overflowed_index: usize = match most_sig_overflowed {
+            Some((i, _))    => i,
+            _               => 0
+        };
         //all fields less significant than `most_sig...` should be reset
         //i.e. call `increment` on them starting with their minimum value
-        let results2 = results_rev.map(|(_, &(field, _, ref range))| 
+        let results2 = results_rev.map(|(_, (_, &(field, _, ref range)))| 
                                        increment(field, 
                                                  range.start as u32, 
-                                                 range))
-                                  //.rev();   //results_rev was reversed
-                                  ;
+                                                 range))//;
+                                  .rev();   //results_rev was reversed
+                                  //;
         //now want to combine results and results2
         //results  stores technically valid entries in each field
         //results2 stores some in the beginning (i.e. the first `n` s.t. n≥0)
         //  that had to be updated because a later field was updated
         //we want to combine the `n` elements of res2 with the last 4-n of res.
-        //let results3 = results2.
+        let results3 = results2//.zip(data.iter())
+                               .chain(
+                                   results.skip(most_sig_overflowed_index)); 
         
 
 
