@@ -66,15 +66,14 @@ fn main() {
     //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
     let test1 = croncfg::parse_Command("35 23 13-27/2 * * https://test.com").unwrap().time;
     assert!(Local.ymd(1970, 01, 14).and_hms(23, 35, 00) == 
-            test1.next_given_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+            test1.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
 
     //trigger at the 0,10,20,30,40,50th minute of hour 0,7,14,21 on Jan 13,14,15
     //starting at Jan 1, 1970 00:00:00  -> next is Jan 13, 1970 00:00:00
     //starting at Jan 1, 1970 00:00:00  -> next is Jan 13, 1970 
     let test2 = croncfg::parse_Command("*/10 */7 13-15 01 * https://test.com").unwrap().time;
-    println!("{}", test2.next_given_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     assert!(Local.ymd(1970, 01, 13).and_hms(00, 00, 00) == 
-            test2.next_given_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+            test2.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     
 
     assert!(croncfg::parse_Line("* * * * * http://www.google.com").is_ok());

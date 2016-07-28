@@ -156,13 +156,16 @@ impl HasNext for Value {
                     ContVal::Range(min,max) => (min, max),
                 };
                 let start = cmp::max(current, min);
-                //let guess = ((start-1)/mult+1)*mult;
+                if start == 0 {
+                    return 0;
+                }
+                let guess = ((start-1)/mult+1)*mult;
                 //let guess = (((start.wrapping_sub(1))/mult)
                 //             .wrapping_add(1)).wrapping_mul(mult);
-                let mult_ = mult as i16;
-                let start_ = start as i16;
-                let guess: i16 = ((start_-1)/mult_+1)*mult_;
-                let guess = guess as u8;
+                //let mult_ = mult as i16;
+                //let start_ = start as i16;
+                //let guess: i16 = ((start_-1)/mult_+1)*mult_;
+                //let guess = guess as u8;
                 if guess < max {
                     //can't be < range.start
                     //in range: this is the answer
@@ -174,9 +177,9 @@ impl HasNext for Value {
                     //0
                     //TODO: verify that there is at least one valid 
                     //answer. e.g. nothing like `20-25/9`
-                    //((min-1)/mult+1)*mult
+                    ((min-1)/mult+1)*mult
                     //(((min.wrapping_sub(1))/mult).wrapping_add(1)).wrapping_mul(mult)
-                    (((min as i16 -1)/mult_+1)*mult_) as u8
+                    //(((min as i16 -1)/mult_+1)*mult_) as u8
                 }
             }
         }
@@ -242,132 +245,64 @@ impl Time {
         //it is useful to be able to specify the `current` time for
         //testing porpoises. otherwise eventually all tests that 
         //compare against a hardcoded date would break :P
-        self.next_given_time(Local::now())
+        self.next_after_time(Local::now())
     }
 
-    pub fn next_given_time(&self, 
-                           now: datetime::DateTime<Local>) 
-                            -> datetime::DateTime<Local> {
+    pub fn next_after_time(&self, 
+                           now: datetime::DateTime<Local>,//let now = now.with_minute(1)
+                          )  -> datetime::DateTime<Local> {
         //call .next() on all fields because `current` might not be valid.
         //now if `current` is valid, .next() will return it.
-        //if a field overflows, that means .next() must be called once more.
-        
-        //The Plus One problem:
-        //We can't call next() on `current_time` because it is useless to 
-        //us if the current time is valid, and field.next() is now inclusive.
-        //So we increment the `minute` field by 1 so that the earliest Next
-        //can be is one minute in the future. 
-        //Is it fine to increment now.minute() by 1, as in data[0][1]?
-        //Or should we call `let now = Local::now().with_minute(1)`?
-        //There shouldn't be a difference, right? Except the former relies
-        //on my code and the latter relies on chrono?
-        
-        //let now = Local::now();
         
         //TODO: add weekday part
         //increment by date or weekday, whichever is less
         //unless one is Asterisk, then increment by the other
         //unless both are Asterisk, in which case it doesn't matter
+        
+        //TODO: replace 4 with a constant?
 
+        //store current values, to be replaced as applicable
         //need to increment now.minute by 1, otherwise if `current` is
         //valid it'll just return it (which we don't want)
-        let data = vec![(&self.minute,  now.minute()+1, MINUTE_RANGE),
+        let data: [(&Vec<Value>, u32, ops::Range<u8>); 4] = 
+                       [(&self.minute,  now.minute()+1, MINUTE_RANGE),
                         (&self.hour,    now.hour(),     HOUR_RANGE),
                         (&self.date,    now.day(),      DATE_RANGE),
                         (&self.month,   now.month(),    MONTH_RANGE)];
-                        //(&self.weekday, now.weekday().num_days_from_sunday(),  
-                        //                                WEEKDAY_RANGE)];
-        //store current values, to be replaced as applicable
+            //(&self.weekday, now.weekday().num_days_from_sunday(),WEEKDAY_RANGE)];
         
-        //`year` field shenanigans: `year` is the only field than can 
-        // overflow a u8. But we technically need to store the year
-        // to use this general solution for tracking overflow.
-        // So pretend the year is 0 in `result` and add the current 
-        // year back (to either 0 or 1) in the dt_opt ymd assignment
-        let mut result: [Next; 4] = [Next::from_n(now.minute()),
-                    Next::from_n(now.hour()),  Next::from_n(now.day()),
-                    //Next::from_n(now.month()), Next::from_n(now.year())];
-                    Next::from_n(now.month())];//, Next::from_n(0)];
-                    
-        let mut overflowed = true;
+        //let result_ = data.iter().map(|&(field, current, ref range)| 
+        //                              increment(field, current, range));
 
-        //TODO      FIX THIS LOGIC
-        //TODO .next() must be called on all fields to verify they're all valid 
-        //TODO If a .next() call overflows, .next() should be called on the 
-        //          next largest field again, because it overflowed
-        //TODO If .next() is called and changes any field's value (i.e. it's no
-        //          longer `current), then all lesser fields should be reset
-        //          to their minimum valid values. c.f. 09 -> 10.
-        //TODO Figure out a way to do this without making spaghetti
-        //
-        //maybe add an explicit `overflowed` value to .next()? 
-        //All fields must be .next()ed to verify they're valid.
-        //If the year  overflowed, reset the month, date, hour, and minute
-        //If the month overflowed, reset the        date, hour, and minute
-        //...
-        //If the minute overflowed, increment the hour
-        //If the  hour  overflowed, increment the date
-        //...
-        
-        //`results`: all fields are valid; fields are Minute, Hour, Day, Month
-        //Tuple: (Next, (&Vec<ast::Value>, u32, Range<u8>))
-        // (result of `increment`, (Entry, now.field(), start..end) )
-        let results = data.iter().map(|&(field, current, ref range)| 
-                                      increment(field, current, range));
-        let results_zipped = results.zip(data.iter());
+        let mut result: [Next; 4] = [Next::blank(); 4];
+        let mut last_increase: usize = 0;
 
-        //loop through the results backwards
-        let mut results_rev = results_zipped.rev().enumerate();
-        //if a significant field overflowed, all less sig fields must be reset
-        //let most_significant_overflowed = results.rev().find(
-        let most_sig_overflowed = results_rev.find(
-                                            |&(i, (next, _))| 
-                                            next.overflowed());
-        //get index of most significant overflow. e.g. `month` is 3,
-        //  `date` is 2, `hour` is 1, `minute` is 0, and None is also 0
-        //Replace the first `n` elements of `results` with `results_rev`, 
-        //  where `n`=`most_sig_overflowed` 
-        let most_sig_overflowed_index: usize = match most_sig_overflowed {
-            Some((i, _))    => i,
-            _               => 0
-        };
-        //all fields less significant than `most_sig...` should be reset
-        //i.e. call `increment` on them starting with their minimum value
-        let results2 = results_rev.map(|(_, (_, &(field, _, ref range)))| 
-                                       increment(field, 
-                                                 range.start as u32, 
-                                                 range))//;
-                                  .rev();   //results_rev was reversed
-                                  //;
-        //now want to combine results and results2
-        //results  stores technically valid entries in each field
-        //results2 stores some in the beginning (i.e. the first `n` s.t. n≥0)
-        //  that had to be updated because a later field was updated
-        //we want to combine the `n` elements of res2 with the last 4-n of res.
-        let results3 = results2//.zip(data.iter())
-                               .chain(
-                                   results.skip(most_sig_overflowed_index)); 
-        
-
-
-
+        //call increment() on all fields once
         for (i, &(field, current, ref range)) in data.iter().enumerate() {
             result[i] = increment(field, current, range);
-            if result[i].overflowed() {
-                //this value should be reset
-                //result[i] = increment(field, range.start, range);
+            if result[i].as_u32() != current {
+                last_increase = i;
             }
-            //overflowed &= result[i].overflowed();
-            if overflowed {
-                //previous field overflowed, so 
-                // even though result[i] is valid, find the *next* value
+        }
+
+        //if a significant field changes, all previous fields just reset
+        //reset all fields before `last_increase` from min value 
+        for i in 0 .. last_increase {
+            let (field, _, ref range) = data[i];
+            result[i] = increment(field, range.start as u32, range);
+        }
+
+        //increment all fields following an overflow
+        let mut last_field_overflowed = false;
+        for (i, &(field, _, ref range)) in data.iter().enumerate() {
+            if last_field_overflowed {
                 result[i] = increment(field, result[i].as_u32(), range);
             }
-            overflowed = result[i].overflowed();
+            last_field_overflowed = result[i].overflowed();
         }
-        //let year_overflow = result[3].overflowed() as i32;
-        let year_overflow = overflowed as i32;//??
-        //pretty sure this should work. result[3] can only be overflowed k
+
+        //last_field_overflowed indicates whether year overflowed
+        let year_overflow = last_field_overflowed as i32;
 
         let mut dt_opt = Local.ymd_opt(now.year() + year_overflow, 
                                        result[3].as_u32(),
@@ -389,10 +324,29 @@ impl Time {
                                    result[2].as_u32());
         }
 
-        //hms fields shouldn't ever overwloe
+        //hms fields shouldn't ever overwlow
         dt_opt.unwrap().and_hms(result[1].as_u32(),
                                 result[0].as_u32(),
                                 0)
+
+            //Old but maybe useful comments
+        //TODO      FIX THIS LOGIC
+        //TODO .next() must be called on all fields to verify they're all valid 
+        //TODO If a .next() call overflows, .next() should be called on the 
+        //          next largest field again, because it overflowed
+        //TODO If .next() is called and changes any field's value (i.e. it's no
+        //          longer `current), then all lesser fields should be reset
+        //          to their minimum valid values. c.f. 09 -> 10.
+        //TODO Figure out a way to do this without making spaghetti
+        //
+        //All fields must be .next()ed to verify they're valid.
+        //If the year  overflowed, reset the month, date, hour, and minute
+        //If the month overflowed, reset the        date, hour, and minute
+        //...
+        //If the minute overflowed, increment the hour
+        //If the  hour  overflowed, increment the date
+        //...
+        //`results`: all fields are valid; fields are Minute, Hour, Day, Month
     }
 }
 

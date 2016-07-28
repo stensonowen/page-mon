@@ -47,12 +47,18 @@ impl Next {
             overflow:   true,
         }   
     }
-    pub fn from_n<T: ToPrimitive>(n: T) -> Next {
+    pub fn blank() -> Next {
         Next {
-            value:      n.to_u8().unwrap(),
+            value:      0,
             overflow:   false,
         }
     }
+    //pub fn from_n<T: ToPrimitive>(n: T) -> Next {
+    //    Next {
+    //        value:      n.to_u8().unwrap(),
+    //        overflow:   false,
+    //    }
+    //}
     pub fn overflowed(&self) -> bool {
         self.overflow
     }
