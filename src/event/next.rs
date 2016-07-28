@@ -21,8 +21,8 @@
 // moving the `Next` details to its own file
 
 //do I really have to use another crate just to be able to cast a generic?
-extern crate num;
-use self::num::ToPrimitive;
+//extern crate num;
+//use self::num::ToPrimitive;
 use std::{cmp, u8};
 
 //Next: calling .next() on a Value will return a u8, from which
