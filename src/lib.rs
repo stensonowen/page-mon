@@ -91,9 +91,9 @@ mod tests {
         //verify .next() works on Time object
         //trigger at 23:35 on some even day between the 13th and the 27th of any month
         //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
-        let test1 = croncfg::parse_Command("35 23 13-27/2 * * https://test.com").unwrap().time;
+        let test = croncfg::parse_Command("35 23 13-27/2 * * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 01, 14).and_hms(23, 35, 00), 
-                   test1.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 
     #[test]
@@ -112,9 +112,9 @@ mod tests {
         //verify .next() works on Time object
         //23:59 on Dec 31
         //starting at Jan 1, 1970 00:00:00  -> next is Dec 31, 23:59
-        let test1 = croncfg::parse_Command("59 23 31 12 * https://test.com").unwrap().time;
+        let test = croncfg::parse_Command("59 23 31 12 * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 12, 31).and_hms(23, 59, 00), 
-                   test1.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 
     #[test]
@@ -122,8 +122,28 @@ mod tests {
         //verify .next() works on Time object around leap years
         //imdnight on the 29th-31st of each month
         //starting at Jan 13, 1970 00:00:00  -> Mar 29, 1970 00:00
-        let test1 = croncfg::parse_Command("0 0 29-31 * * https://test.com").unwrap().time;
+        let test = croncfg::parse_Command("0 0 29-32 * * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 03, 29).and_hms(00, 00, 00), 
-                   test1.next_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
+                   test.next_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
+    }
+
+    #[test]
+    fn next5() {
+        //verify .next() works on Time object with weekdays
+        //trigger every minute of every Monday of february
+        let test = croncfg::parse_Command("* * * 2 MON https://test.com").unwrap().time;
+        assert_eq!(Local.ymd(1970, 02, 02).and_hms(00, 00, 00), 
+                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+    }
+
+    #[test]
+    #[ignore]
+    fn next6() {
+        //verify .next() works on Time object with weekdays
+        //trigger every minute of every Monday of february
+        //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
+        let test = croncfg::parse_Command("* * * 2 1 https://test.com").unwrap().time;
+        assert_eq!(Local.ymd(1970, 02, 01).and_hms(00, 00, 00), 
+                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 }

@@ -30,7 +30,7 @@ use chrono::{Local, TimeZone};
 
 fn main() {
 
-    let test1 = croncfg::parse_Command("0 0 29-31 * * https://test.com").unwrap().time;
-    assert_eq!(Local.ymd(1970, 03, 29).and_hms(00, 00, 00), 
-               test1.next_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
+    let test = croncfg::parse_Command("* * * 2 1 https://test.com").unwrap().time;
+    assert_eq!(Local.ymd(1970, 02, 02).and_hms(00, 00, 00), 
+               test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
 }

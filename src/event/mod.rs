@@ -32,9 +32,6 @@
  *      It might be in our best interest to consolidate values also (e.g. 
  *      `2,1-3` and `1-3,3-4` are redundant), but I'm not sure how I'd do that.
  *  (1) would probably be simpler, cleaner, and less interesting. 
- *
- *
- *
  */
 
 extern crate hyper;
@@ -49,8 +46,6 @@ mod next;
 use event::next::Next;
 
 use ast::*;
-//use event::chrono::Datelike;
-//mod crontime;
 
 
 pub trait HasNext {
@@ -105,12 +100,6 @@ pub trait HasNext {
 impl HasNext for ContVal {
     fn next(&self, current: u8, range: &ops::Range<u8>) -> u8 {
         //safe to assume current \in range
-        //TODO: track overflow. field overflowed by 1 if 
-        // next<current or 0 otherwise.
-        //TODO: verify resulting date is valid. May need to call 
-        // next() up to three more times* to result in a valid date
-        // in the case of `current:2`, `range:29..32`.
-        // And remember to track the overflow again.
         match *self {
             ContVal::Asterisk       => {
                 if current < range.end {
@@ -121,9 +110,7 @@ impl HasNext for ContVal {
             }
             ContVal::Range(min,max) => {
                 //not safe to assume that min <= current <= max
-                //DONE: verify min < max
                 //TODO: increment max by one: cron ranges are inclusive
-                //DONE: verify min and max both in range
                 if current >= min && current < max {
                     current
                 } else {
@@ -160,26 +147,15 @@ impl HasNext for Value {
                     return 0;
                 }
                 let guess = ((start-1)/mult+1)*mult;
-                //let guess = (((start.wrapping_sub(1))/mult)
-                //             .wrapping_add(1)).wrapping_mul(mult);
-                //let mult_ = mult as i16;
-                //let start_ = start as i16;
-                //let guess: i16 = ((start_-1)/mult_+1)*mult_;
-                //let guess = guess as u8;
                 if guess < max {
-                    //can't be < range.start
-                    //in range: this is the answer
                     guess
                 } else {
                     //the smallest multiple of `skip` that
                     //exceeds `current` also exceeds `end`,
                     //so it overflowed.
-                    //0
                     //TODO: verify that there is at least one valid 
                     //answer. e.g. nothing like `20-25/9`
                     ((min-1)/mult+1)*mult
-                    //(((min.wrapping_sub(1))/mult).wrapping_add(1)).wrapping_mul(mult)
-                    //(((min as i16 -1)/mult_+1)*mult_) as u8
                 }
             }
         }
@@ -212,15 +188,7 @@ fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next {
     let mut tmp:  Next;
     for opt in field.iter() {
         let val = opt.next(current, &range);
-        //tmp = Next::new(val, val<=current);
         tmp = Next::new(val, val<current);
-        //shit. is this a problem?
-        //overflow is calculated by checking `val<current`.
-        //The new .next() system returns `current` if it's valid
-        //So if minute=Const(42) and current=42, it'll return now
-        // which looks like an overflow (like it means NextHour:42)
-        // but it won't.
-        //BUT we call it on current_time + 1 minute
         if tmp < best {
             best = tmp;
         }
@@ -248,49 +216,46 @@ impl Time {
         self.next_after_time(Local::now())
     }
 
-    pub fn next_after_time(&self, 
-                           now: datetime::DateTime<Local>,//let now = now.with_minute(1)
-                          )  -> datetime::DateTime<Local> {
-        //call .next() on all fields because `current` might not be valid.
-        //now if `current` is valid, .next() will return it.
-        
-        //TODO: add weekday part
+    fn select_deciding_field(&self,
+                             now: &datetime::DateTime<Local>,
+                             )  -> (&Entry, u32, ops::Range<u8>) {
         //increment by date or weekday, whichever is less
         //unless one is Asterisk, then increment by the other
         //unless both are Asterisk, in which case it doesn't matter
         let date_data   = (&self.date,     now.day(),  DATE_RANGE);
         let wd_data     = (&self.weekday,  now.weekday().num_days_from_sunday(), 
                                                        WEEKDAY_RANGE);
-        let deciding_field = {
-            if self.weekday.contains(&Value::CV(ContVal::Asterisk)) {
+        //`STAR` == `Value::CV(ContVal::Asterisk)`
+        if self.weekday.contains(&STAR) {
+            date_data
+        } else if self.date.contains(&STAR) {
+            wd_data
+        } else {
+            let date_increment  = increment(date_data.0, date_data.1, &date_data.2);
+            let wd_increment    = increment(  wd_data.0,   wd_data.1,   &wd_data.2);
+            if date_increment < wd_increment {
                 date_data
-            } else if self.date.contains(&Value::CV(ContVal::Asterisk)) {
-                wd_data
             } else {
-                let date_increment  = increment(date_data.0, date_data.1, &date_data.2);
-                let wd_increment    = increment(  wd_data.0,   wd_data.1,   &wd_data.2);
-                if date_increment < wd_increment {
-                    date_data
-                } else {
-                    wd_data
-                }
+                wd_data
             }
-        };
-        
+        }
+    }
 
+    pub fn next_after_time(&self, 
+                           now: datetime::DateTime<Local>,//let now = now.with_minute(1)
+                          )  -> datetime::DateTime<Local> {
+        //call .next() on all fields because `current` might not be valid.
+        //now if `current` is valid, .next() will return it.
+        let deciding_field = self.select_deciding_field(&now);
+        
         //store current values, to be replaced as applicable
         //need to increment now.minute by 1, otherwise if `current` is
         //valid it'll just return it (which we don't want)
-        let data: [(&Vec<Value>, u32, ops::Range<u8>); 4] = 
+        let data: [(&Entry, u32, ops::Range<u8>); 4] = 
                        [(&self.minute,  now.minute()+1, MINUTE_RANGE),
                         (&self.hour,    now.hour(),     HOUR_RANGE),
-                        //(&self.date,    now.day(),      DATE_RANGE),
                         deciding_field,
                         (&self.month,   now.month(),    MONTH_RANGE)];
-            //(&self.weekday, now.weekday().num_days_from_sunday(),WEEKDAY_RANGE)];
-        
-        //let result_ = data.iter().map(|&(field, current, ref range)| 
-        //                              increment(field, current, range));
 
         let mut result: [Next; 4] = [Next::blank(); 4];
         let mut last_increase: usize = 0;
@@ -327,11 +292,6 @@ impl Time {
                                        result[2].as_u32());
 
         while dt_opt == chrono::LocalResult::None {
-            println!("YEAR: {}, \tMONTH: {}, \tDAY: {}", 
-                     now.year() + year_overflow,
-                     result[3].as_u32(),
-                     result[2].as_u32());
-
             //invalid date, e.g. Feb 30. call next() at most 3 times
             //invalid dates can arise because field.next() treats all 
             //months as if they have 31 days. At most this will need to
