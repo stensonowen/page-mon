@@ -93,7 +93,7 @@ mod tests {
         //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
         let test = croncfg::parse_Command("35 23 13-27/2 * * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 01, 14).and_hms(23, 35, 00), 
-                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test.next_date_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod tests {
         //starting at Jan 1, 1970 00:00:00  -> next is Jan 13, 1970 00:00:00
         let test2 = croncfg::parse_Command("*/10 */7 13-15 01 * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 01, 13).and_hms(00, 00, 00), 
-                   test2.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test2.next_date_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }    
 
     #[test]
@@ -114,7 +114,7 @@ mod tests {
         //starting at Jan 1, 1970 00:00:00  -> next is Dec 31, 23:59
         let test = croncfg::parse_Command("59 23 31 12 * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 12, 31).and_hms(23, 59, 00), 
-                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test.next_date_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 
     #[test]
@@ -124,7 +124,7 @@ mod tests {
         //starting at Jan 13, 1970 00:00:00  -> Mar 29, 1970 00:00
         let test = croncfg::parse_Command("0 0 29-32 * * https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 03, 29).and_hms(00, 00, 00), 
-                   test.next_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
+                   test.next_date_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
         //trigger every minute of every Monday of february
         let test = croncfg::parse_Command("* * * 2 MON https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 02, 02).and_hms(00, 00, 00), 
-                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test.next_date_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 
     #[test]
@@ -144,6 +144,6 @@ mod tests {
         //starting at Jan 1, 1970 00:00:00  -> next is Jan 14, 1970 23:35:00
         let test = croncfg::parse_Command("* * * 2 1 https://test.com").unwrap().time;
         assert_eq!(Local.ymd(1970, 02, 01).and_hms(00, 00, 00), 
-                   test.next_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+                   test.next_date_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
     }
 }

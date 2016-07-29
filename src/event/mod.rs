@@ -196,6 +196,11 @@ fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next {
     best
 }
 
+fn increment_from_start(field: &Entry, range: &ops::Range<u8>) -> Next { 
+    increment(field, range.start as u32, range)
+}
+
+
 impl Time {
     pub fn verify(&self) -> bool {
         //test all elements in the minute, hour, date, etc. vectors
@@ -213,48 +218,77 @@ impl Time {
         //it is useful to be able to specify the `current` time for
         //testing porpoises. otherwise eventually all tests that 
         //compare against a hardcoded date would break :P
-        self.next_after_time(Local::now())
-    }
-
-    fn select_deciding_field(&self,
-                             now: &datetime::DateTime<Local>,
-                             )  -> (&Entry, u32, ops::Range<u8>) {
-        //increment by date or weekday, whichever is less
-        //unless one is Asterisk, then increment by the other
-        //unless both are Asterisk, in which case it doesn't matter
-        let date_data   = (&self.date,     now.day(),  DATE_RANGE);
-        let wd_data     = (&self.weekday,  now.weekday().num_days_from_sunday(), 
-                                                       WEEKDAY_RANGE);
-        //`STAR` == `Value::CV(ContVal::Asterisk)`
+        //self.next_date_after_time(Local::now())
+        
+        //decide which to use:
+        //if one is an asterisk, return the other
+        //if neither are, return whichever comes first
+        let now = Local::now();
         if self.weekday.contains(&STAR) {
-            date_data
+            self.next_date_after_time(now)
         } else if self.date.contains(&STAR) {
-            wd_data
+            self.next_weekday_after_time(now)
         } else {
-            let date_increment  = increment(date_data.0, date_data.1, &date_data.2);
-            let wd_increment    = increment(  wd_data.0,   wd_data.1,   &wd_data.2);
-            if date_increment < wd_increment {
-                date_data
-            } else {
-                wd_data
-            }
+            let by_date     = self.next_date_after_time(now);
+            let by_weekday  = self.next_weekday_after_time(now);
+            cmp::min(by_date, by_weekday)
         }
     }
 
-    pub fn next_after_time(&self, 
-                           now: datetime::DateTime<Local>,//let now = now.with_minute(1)
-                          )  -> datetime::DateTime<Local> {
-        //call .next() on all fields because `current` might not be valid.
-        //now if `current` is valid, .next() will return it.
-        let deciding_field = self.select_deciding_field(&now);
+    
+    pub fn next_weekday_after_time(&self, 
+                                   now: datetime::DateTime<Local>,)  
+            -> datetime::DateTime<Local> {
+        //weekdays work differently than dates. 
+        //If a weekday overflows, the month doesn't necessarily overflow
+        //I'm not super certain how to write this function without either
+        // duplicating code from next_date_after_time or making spaghetti
+        let first_valid_month = increment(&self.month, now.month(), &MONTH_RANGE);
+        if first_valid_month.as_u32() != now.month() {
+            //get hour and minute
+            //month changed, so they started from 0, so they can't overflow
+            let first_valid_hour    = increment_from_start(&self.hour,    &HOUR_RANGE);
+            let first_valid_minute  = increment_from_start(&self.minute,  &MINUTE_RANGE);
+
+            //generate date that meets criteria except `weekday`; use the 1st of the month
+            let year = now.year() + first_valid_month.overflowed() as i32;
+            let mut dt = Local.ymd(year, first_valid_month.as_u32(), 1);
+
+            //get the weekday of the first day of the month, and find how much to 
+            //add to it to satisfy the weekday criterion
+            let day1_of_week = dt.weekday().num_days_from_sunday();    //from 0
+            let first_valid_weekday = increment(&self.weekday, day1_of_week, &WEEKDAY_RANGE);
+            let delta = first_valid_weekday.as_u32() + 
+                (first_valid_weekday.overflowed() as u32) * 7;
+
+            dt = dt.with_day0(delta).unwrap();
+            dt.and_hms(first_valid_hour.as_u32(), first_valid_minute.as_u32(), 0)
+            //TODO: TEST
+        }
+        else {
+            //TODO 
+            //TODO: More complicated if fields can overflow 
+            //TODO 
+
+
+            now
+        }
+    }
+
+    pub fn next_date_after_time(&self, 
+                                now: datetime::DateTime<Local>,) 
+            -> datetime::DateTime<Local> {
+        //TODO: UNFORTUNATELY, THIS IS NOT HOW NUMBERS WORK
+        //Need to handle weekdays differently than dates
         
+        //let now = now.with_minute(1)
         //store current values, to be replaced as applicable
         //need to increment now.minute by 1, otherwise if `current` is
         //valid it'll just return it (which we don't want)
         let data: [(&Entry, u32, ops::Range<u8>); 4] = 
                        [(&self.minute,  now.minute()+1, MINUTE_RANGE),
                         (&self.hour,    now.hour(),     HOUR_RANGE),
-                        deciding_field,
+                        (&self.date,    now.day(),      DATE_RANGE),
                         (&self.month,   now.month(),    MONTH_RANGE)];
 
         let mut result: [Next; 4] = [Next::blank(); 4];
