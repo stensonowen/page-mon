@@ -37,7 +37,21 @@ Here is the context-free grammar used to parse the cron-like config file, where 
     DayOfWeek   →   "SUN"  |  "MON"  |  "TUE"  |  ...  |  "SAT"
 ```
 
+### Approaches to Scheduling
+This is a weird time for me to be writing this, considering I'm 90% of the way through one of the approaches, but I'm reconsidering my choice and thought I'd document the comparison. 
+This problem boils down to how to get from the structure defined in `ast.rs` to a `chrono::datetime` object representing the next instant an event should be fired. The two approaches here are to 
+(1) write the necessary framework to be able to call `.next()` on a Time object and get a datetime and then pausing until an event is due, or 
+(2) to populate a data structure with all upcoming instants and pausing between iterating through them.
 
+Option (1) is what I've been implementing for the last week. It's advantages are that it doesn't store unnecessary values and scales intuitively. However, it is more complicated.
+Option (2) requires significantly more space to store `* * * * *` than to store `0 0 0 0 *`. It also requires a period before events can begin to fire while it populates a data structure (a hashset, probably) for all events in the next hour/day/month.
+
+I started implementing Option (1) because it seemed needlessly redundant to generate and store a set of instants instead of generating them as-needed. This has proven to be a very unpleasant experience, and I have grown to despise the Gregorian calendar. A weekday-based and date-based triggers work quite differently, and the number of corner cases involved requires a library of unit tests. I'm not quite finished with this implementation, but I've exceeded 400 lines and I've thought I was done only to find a major ommission via unit tests about 3 times. 
+For this project, consistency is probably more important than performance or elegance, so I've been reconsidering Option (2).
+
+Also, Option (1) is losing its performance and elegance. In order to make the code understandable at all I keep needing to add layers of abstraction, and I've come to believe calling `Time::next()` will lead to redundant work being done. 
+
+In any case, I think I'm going to explore what Option (2) would look like. It seems like I'm almost done implementing (1), but that's before adding dozens of additional unit tests and assuming I don't find a significant bug that requires a major rewrite (again).
 
 
 

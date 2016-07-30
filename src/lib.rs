@@ -144,8 +144,8 @@ mod tests {
     fn next6() {
         //verify .next() works on Time object with weekdays
         //
-        let test = croncfg::parse_Command("* * * 2 MON https://test.com").unwrap().time;
-        assert_eq!(Local.ymd(1970, 02, 02).and_hms(00, 00, 00), 
-                   test.next_weekday_after_time(Local.ymd(1970, 01, 01).and_hms(00, 00, 00)));
+        let test = croncfg::parse_Command("* * * 2 thu https://test.com").unwrap().time;
+        assert_eq!(Local.ymd(1970, 02, 05).and_hms(00, 00, 00), 
+                   test.next_weekday_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
     }
 }

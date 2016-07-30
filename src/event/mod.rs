@@ -177,7 +177,8 @@ const MINUTE_RANGE: ops::Range<u8> = 0..60;
 const HOUR_RANGE:   ops::Range<u8> = 0..24;
 const DATE_RANGE:   ops::Range<u8> = 1..32;
 const MONTH_RANGE:  ops::Range<u8> = 1..13;
-const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
+//const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
+const WEEKDAY_RANGE:ops::Range<u8> = 1.. 8;
 
 
 fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next { 
@@ -246,6 +247,7 @@ impl Time {
         println!("BP A");
         let first_valid_month = increment(&self.month, now.month(), &MONTH_RANGE);
         if first_valid_month.as_u32() != now.month() {
+            println!("weekday, overflow");
             //get hour and minute
             //month changed, so they started from 0, so they can't overflow
             let first_valid_minute  = increment_from_start(&self.minute,  &MINUTE_RANGE);
@@ -267,9 +269,12 @@ impl Time {
             //TODO: TEST
         }
         else {
+            println!("Weekday, NOverflow");
             //TODO 
             //TODO: More complicated if fields can overflow 
-            //TODO 
+            //TODO: Support weird Dec/Jan week thing: 
+            //  subtract like 14 or 42 days and add them on at the end
+            //This should work for both cases
             
             //get hour and minute
             //overflowing is now an option
@@ -285,19 +290,30 @@ impl Time {
                                              first_valid_hour.as_u32()+1, &HOUR_RANGE);
             }
             //if the minute/hour caused the day to overflow, then `current`
-            // is no longer a valid option. So call increment() on tomorrow.
+            // is no longer a valid option. So call increment the date
             let mut dt_base = now;
             if first_valid_hour.overflowed() {
                 dt_base = dt_base + Duration::days(1);
             }
+
+            //convert date to ISO date (year+week+weekday)
             let (year, week, weekday) = dt_base.isoweekdate();
 
             let first_valid_weekday = increment(&self.weekday, 
                                                 weekday.num_days_from_sunday(), 
                                                 &WEEKDAY_RANGE);
-            //the easiest way to use weeks/weekdays is via chrono's ISO support
+            //the "easiest" way to use weeks/weekdays is via chrono's ISO support
             //convert today/tomorrow to a week/weekday, then find the next valid
             //weekday, adjust `week` for any overflow, and recreate the date.
+            
+            //overflow calculation is harder here. ISO weekday starts with Monday,
+            // but rational humans start the week with Sunday.
+            //      fuck it
+
+            let _foo = increment(&self.weekday, 3, &WEEKDAY_RANGE);
+            println!("TEST: {:?}", _foo);
+
+
             let first_valid_week = week + (first_valid_weekday.overflowed() as u32);
             let first_valid_day = match first_valid_weekday.as_u32() {
                 //I promise this is way more readable than the other way to do it
@@ -317,8 +333,9 @@ impl Time {
             let dt_opt = Local.isoywd_opt(year, first_valid_week, first_valid_day);
             let dt = {
                 if dt_opt == chrono::LocalResult::None {
+                    println!("Recalculating.");
                     //overflowed; increment year and reset week.
-                    Local.isoywd(year+1, 0, first_valid_day)
+                    Local.isoywd(year+1, 1, first_valid_day)
                 } else {
                     dt_opt.unwrap()
                 }
