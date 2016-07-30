@@ -37,7 +37,7 @@
 extern crate hyper;
 
 extern crate chrono;
-use self::chrono::{Local, datetime, TimeZone};
+use self::chrono::{Local, datetime, TimeZone, Duration, Weekday};
 use event::chrono::{Timelike, Datelike};
 
 use std::{ops, cmp, u8};
@@ -243,12 +243,13 @@ impl Time {
         //If a weekday overflows, the month doesn't necessarily overflow
         //I'm not super certain how to write this function without either
         // duplicating code from next_date_after_time or making spaghetti
+        println!("BP A");
         let first_valid_month = increment(&self.month, now.month(), &MONTH_RANGE);
         if first_valid_month.as_u32() != now.month() {
             //get hour and minute
             //month changed, so they started from 0, so they can't overflow
-            let first_valid_hour    = increment_from_start(&self.hour,    &HOUR_RANGE);
             let first_valid_minute  = increment_from_start(&self.minute,  &MINUTE_RANGE);
+            let first_valid_hour    = increment_from_start(&self.hour,    &HOUR_RANGE);
 
             //generate date that meets criteria except `weekday`; use the 1st of the month
             let year = now.year() + first_valid_month.overflowed() as i32;
@@ -269,9 +270,61 @@ impl Time {
             //TODO 
             //TODO: More complicated if fields can overflow 
             //TODO 
+            
+            //get hour and minute
+            //overflowing is now an option
+            let mut first_valid_minute = increment(&self.minute, now.minute(), &MINUTE_RANGE);
+            let mut first_valid_hour   = increment(&self.hour,   now.hour(),    &HOUR_RANGE);
 
+            //if the hour changed, reset the minute
+            //if the hour didn't change, but the minute overflowed, increase hour by ≥1
+            if first_valid_hour.as_u32() != now.hour() {
+                first_valid_minute = increment_from_start(&self.minute, &MINUTE_RANGE);
+            } else if first_valid_minute.overflowed() {
+                first_valid_hour = increment(&self.hour, 
+                                             first_valid_hour.as_u32()+1, &HOUR_RANGE);
+            }
+            //if the minute/hour caused the day to overflow, then `current`
+            // is no longer a valid option. So call increment() on tomorrow.
+            let mut dt_base = now;
+            if first_valid_hour.overflowed() {
+                dt_base = dt_base + Duration::days(1);
+            }
+            let (year, week, weekday) = dt_base.isoweekdate();
 
-            now
+            let first_valid_weekday = increment(&self.weekday, 
+                                                weekday.num_days_from_sunday(), 
+                                                &WEEKDAY_RANGE);
+            //the easiest way to use weeks/weekdays is via chrono's ISO support
+            //convert today/tomorrow to a week/weekday, then find the next valid
+            //weekday, adjust `week` for any overflow, and recreate the date.
+            let first_valid_week = week + (first_valid_weekday.overflowed() as u32);
+            let first_valid_day = match first_valid_weekday.as_u32() {
+                //I promise this is way more readable than the other way to do it
+                0   => Weekday::Sun,
+                1   => Weekday::Mon,
+                2   => Weekday::Tue,
+                3   => Weekday::Wed,
+                4   => Weekday::Thu,
+                5   => Weekday::Fri,
+                6   => Weekday::Sat,
+                7   => Weekday::Sun,
+                _   => panic!("Unknown date"),
+            };
+
+            //check if this is valid. It may not be if the year overflowed
+            //(pretty sure that's the only circumstance, right??)
+            let dt_opt = Local.isoywd_opt(year, first_valid_week, first_valid_day);
+            let dt = {
+                if dt_opt == chrono::LocalResult::None {
+                    //overflowed; increment year and reset week.
+                    Local.isoywd(year+1, 0, first_valid_day)
+                } else {
+                    dt_opt.unwrap()
+                }
+            };
+            
+            dt.and_hms(first_valid_hour.as_u32(), first_valid_minute.as_u32(), 0)
         }
     }
 
