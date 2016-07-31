@@ -56,9 +56,21 @@ pub Line: ast::Line = {
 
 
 pub Command: ast::Command = {
-    <t:Time> <u:Url>	=> ast::Command { time:t, url: u.to_owned() },
+    <t:Time> <a:Action>	=> ast::Command { time:t, act:a },
 };
-    
+
+
+Action: ast::Action = {
+    <u:Url>                     => ast::Action { url:u.to_owned(), contact:None },
+    <u:Url> "->" <c:Contact>    => ast::Action { url:u.to_owned(), contact:Some(c) },
+};
+
+
+Contact: ast::Contact = {
+    r"(?i)email"    => ast::Contact::Email,
+    r"(?i)text"     => ast::Contact::Text,
+};
+
 
 Time: ast::Time = {
     <a:Entry> <b:Entry> <c:Entry> <d:Entry_Month> <e:Entry_Day> => 

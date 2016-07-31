@@ -44,8 +44,8 @@
 use std::ops;
 use std::collections::BTreeSet;
 
-pub mod value_item;
-use event::value_item::*;
+pub mod value_itr;
+use event::value_itr::*;
  
 pub mod calendar;
 use event::calendar::*;

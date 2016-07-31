@@ -22,7 +22,9 @@ Here is the context-free grammar used to parse the cron-like config file, where 
 ```
     Line        →   Command  |  Comment
   † Comment     →   "#.*"
-    Command     →   Time Url
+    Command     →   Time Action
+    Action      →   Url  |  Url "->" Contact
+  † Contact     →   "EMAIL"  |  "TEXT"
     Time        →   Entry Entry Entry Entry_Month Entry_Day  |  Nickname
     Entry_Month →   Entry  |  MonthOfYear
     Entry_Day   →   Entry  |  DayOfWeek

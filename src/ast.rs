@@ -38,10 +38,22 @@ pub enum Line {
     Cmd(Command),
 }
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct Command {
     pub time:   Time,
-    pub url:    String,
+    pub act:    Action,
+    //pub url:    String,
+}
+
+//#[derive(Debug)]
+pub struct Action {
+    pub url:        String,
+    pub contact:    Option<Contact>,
+}
+
+pub enum Contact {
+    Email,
+    Text,
 }
 
 //#[derive(Debug)]
@@ -105,7 +117,7 @@ impl Debug for Time {
 impl Debug for Line {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         if let Line::Cmd(ref cmd) = *self {
-            try!(write!(fmt, "{:?}\n", cmd.url));
+            try!(write!(fmt, "{:?}\n", cmd.act.url));
             try!(write!(fmt, "\tminute:\t\t{:?}\n", cmd.time.minute));
             try!(write!(fmt, "\thour:\t\t{:?}\n",   cmd.time.hour));
             try!(write!(fmt, "\tdate:\t\t{:?}\n",   cmd.time.date));
