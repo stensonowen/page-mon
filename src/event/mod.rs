@@ -34,69 +34,48 @@
  *  (1) would probably be simpler, cleaner, and less interesting. 
  */
 
-extern crate hyper;
+//extern crate hyper;
 
-extern crate chrono;
-use self::chrono::{Local, datetime, TimeZone, Duration, Weekday};
-use event::chrono::{Timelike, Datelike};
+//extern crate chrono;
+//use self::chrono::{Local, datetime, TimeZone, Duration, Weekday};
+//use event::chrono::{Timelike, Datelike};
 
-use std::{ops, cmp, u8};
+//use std::{ops, cmp, u8};
+use std::ops;
 
-mod next;
-use event::next::Next;
-
+pub mod value_item;
+use event::value_item::*;
+//mod next;
+//use event::next::Next;
 use ast::*;
 
 
-pub trait HasNext {
-    fn next(&self, current: u8, range: &ops::Range<u8>) -> u8;
-    //get next value to trigger an event given its current value 
-    // (which did not trigger it) and the valid range (which 
-    // varied depending on which field this is.
-    //If the result is ≤ current, then this field overflowed by 1.
-    //Can be buggy on the month field when the max varies. Might
-    // not overflow predictably.
-    //
-    //So I spent a full day trying to implement the next_month() corner
-    //case because not all months have the same number of days before
-    //realizing I didn't need to, so I'm going to explain myself.
-    //The way next() works is by checking the minimum value that's in
-    //range and higher than `current`, and if no such number exists it 
-    //returns the minimum valid value. Ordinarily, next() doesn't need
-    //to track overflow because next() overflowed by 1 if next<=current
-    //and 0 otherwise. However, because some months have fewer than 31 
-    //days, sometimes a Value (e.g. 30) is only valid for certain months.
-    //Thus not only would next() have to check with a variable `max`, 
-    //it would also have to keep track of the number of times it over-
-    //flowed. However, the Gregorian calendar taketh away, but it also
-    //giveth: there are no consecutive months that both do not have the
-    //maximum number of days (31). That means this bug will never happen,
-    //because if the current month has 31 days ...
-    //dammit
-    //Scratch that. If we have `@monthly` and it's Jan 30, then next() 
-    //yields Feb 30, and correcting that results in an overflow by 2.
-    //So.
-    //next() is almost always right. It can be wrong if the month after 
-    //the `current` month has fewer days than the upper limit of the range. 
-    //This is easier to fix. Instead of writing a new function to generate
-    //the next, we can take the final date with all relevant fields 
-    //updated and verify that it's valid. If it's invalid, we call next()
-    //on the date field at most 3 more times until the date is valid.
-    //The worst case scenario (next()ing 3 times) is when `current` is 
-    //January and `range.end` is 31 (and `range.start`<29): then next()
-    //gives us Feb 29, which is invalid (usually), and next() gives 
-    //Feb 30, Feb 31, and finally Mar N. Mar N is guaranteed to be valid 
-    //because March has 31 days and each next() overflows by at most 1.
-    //Christ.
-    //https://en.wikipedia.org/wiki/International_Fixed_Calendar
 
+impl Iterator for ContVal {
+    type Item = u8;
+
+    fn next(&mut self) -> Option<u8> {
+        None
+    }
+
+
+}
+
+
+
+/*
+pub trait HasNext {
+    //fn next(&self, current: u8, range: &ops::Range<u8>) -> u8;
+    
     fn verify(&self, valid: &ops::Range<u8>) -> bool;
     //returns whether this value is valid. 
     //Examples of invalid values include constants outside the 
     // the valid range (e.g. 100) and ranges like 5..2.
 }
+*/
 
 
+/*
 impl HasNext for ContVal {
     fn next(&self, current: u8, range: &ops::Range<u8>) -> u8 {
         //safe to assume current \in range
@@ -168,9 +147,10 @@ impl HasNext for Value {
                 mult != 0 && mult < valid.end && cv.verify(valid), 
         }
     }
-}
+}*/
 
 
+/*
 //Valid ranges for each field
 //Lower bound included, upper bound excluded
 const MINUTE_RANGE: ops::Range<u8> = 0..60;
@@ -179,8 +159,10 @@ const DATE_RANGE:   ops::Range<u8> = 1..32;
 const MONTH_RANGE:  ops::Range<u8> = 1..13;
 //const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
 const WEEKDAY_RANGE:ops::Range<u8> = 1.. 8;
+*/
 
 
+/*
 fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next { 
     //return the soonest valid time by calling .next() on all 
     // comma-delimited Values
@@ -200,8 +182,10 @@ fn increment(field: &Entry, current: u32, range: &ops::Range<u8>) -> Next {
 fn increment_from_start(field: &Entry, range: &ops::Range<u8>) -> Next { 
     increment(field, range.start as u32, range)
 }
+*/
 
 
+/*
 impl Time {
     pub fn verify(&self) -> bool {
         //test all elements in the minute, hour, date, etc. vectors
@@ -437,4 +421,4 @@ impl Time {
         //`results`: all fields are valid; fields are Minute, Hour, Day, Month
     }
 }
-
+*/
