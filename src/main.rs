@@ -27,6 +27,7 @@ pub mod ast;
 
 use event::value_item::ValueItem;
 use event::*;
+use event::calendar::*;
 //extern crate chrono;
 //use chrono::{Local, TimeZone};
 
@@ -35,15 +36,18 @@ fn main() {
     //let tmp = Local.isoywd(2016, 1, chrono::Weekday::Mon);
     //println!("TMP: {}", tmp);
 
-    let mut test = croncfg::parse_Command("1-10,10-20/2,20-30/3 * * * 0 https://test.com")
-                            .unwrap()
-                            .time;
+    let mut tmp = croncfg::parse_Command("1-10,10-20/2,20-30/3 * * * 0 https://test.com").unwrap();
     //let tmp: ast::Value = test.minute[0].clone();
-    let range = 0..60;
-    let cal = cal_from_vals(&mut test.minute, range);
-    for i in cal.iter() {
-        println!("{}", i);
-    }
+    //let range = 0..60;
+    let cal = Calendar::from_time(&mut tmp.time);
+    println!("{:?}", cal);
+    
+    //let cal = collect_vals(&mut tmp.time.weekday, range);
+    //for i in cal.iter() {
+    //    print!("{}, ", i);
+    //}
+
+    println!("");
     //for mut itr in test.minute.into_iter() {
     //    let range = 0..60;
     //    let vi = ValueItem::new(&mut itr, &range);

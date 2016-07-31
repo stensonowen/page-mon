@@ -88,10 +88,11 @@ impl Iterable for Value {
         //remember: `current` is valid
         match *self {
             Value::CV(ref cv)   => cv.next(current, max),
-            Value::Constant(c)  => {
-                if c < max { Some(c) }
-                else { None }
-            },
+            Value::Constant(c)  => None,
+            //{
+            //    if c < max { Some(c) }
+            //    else { None }
+            //},
             Value::Skip(ref cv, mult) => {
                 let guess = current + mult;
                 let upper_bound = match *cv {

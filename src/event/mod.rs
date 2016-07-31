@@ -46,23 +46,25 @@ use std::collections::BTreeSet;
 
 pub mod value_item;
 use event::value_item::*;
+ 
+pub mod calendar;
+use event::calendar::*;
 
 use ast::*;
 
 
-pub type Calendar = BTreeSet<u8>;
+//pub type Calendar = BTreeSet<u8>;
 
-pub fn cal_from_vals(vals: &mut Vec<Value>, range: ops::Range<u8>) -> Calendar {
-    //let max_size = (range.end - range.start) as usize;
-    let mut cal = Calendar::new();
-    for mut value in vals.into_iter() {
-        let val_item = ValueItem::new(&mut value, &range);
-        for possibility in val_item.into_iter() {
-            cal.insert(possibility);
-        }
-    }
-    cal
-}
+//pub fn collect_vals(vals: &mut Vec<Value>, range: ops::Range<u8>) -> BTreeSet<u8> {
+//    let mut cal = BTreeSet::<u8>::new();
+//    for mut value in vals.into_iter() {
+//        let val_item = ValueItem::new(&mut value, &range);
+//        for possibility in val_item.into_iter() {
+//            cal.insert(possibility);
+//        }
+//    }
+//    cal
+//}
 
 
 
