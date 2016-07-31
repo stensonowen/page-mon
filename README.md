@@ -55,5 +55,6 @@ Also, Option (1) is losing its performance and elegance. In order to make the co
 
 In any case, I think I'm going to explore what Option (2) would look like. It seems like I'm almost done implementing (1), but that's before adding dozens of additional unit tests and assuming I don't find a significant bug that requires a major rewrite (again).
 
+EDIT: For now, as a placeholder, I'm just going to do something like what [Minix/cron.c](http://www.cise.ufl.edu/~cop4600/cgi-bin/lxr/http/source.cgi/commands/simple/cron.c) does and check every minute for which events have to fire. How it ends up is anyone's guess, though.
 
 

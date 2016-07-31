@@ -21,7 +21,7 @@ use std::ops;
 use std::collections::BTreeSet;
 
 extern crate chrono;
-use self::chrono::{TimeZone, Local, Datelike};
+use self::chrono::{TimeZone, Local, Datelike, Timelike, DateTime};
 
 //pub mod value_itr;
 use event::value_itr::*;
@@ -101,6 +101,35 @@ impl Calendar {
             }
         }
         month_set
+    }
+
+    pub fn fire_now(&self, now: DateTime<Local>) -> bool {
+        //if day_of_week is `*`, use day_of_month instead
+        //if day_of_month is `*`, use day_of_week instead
+        //if both are `*`, use either
+        //TODO: make whole thing one big A&&B&&C&&D so that not everything
+        // is computed unless it needs to be?
+        let day_matches = {
+            let date        = now.day() as u8;
+            let day_of_week = now.weekday().num_days_from_sunday() as u8;
+            let dow_matches = self.dow.contains(&day_of_week);
+            let date_matches = self.dt.contains(&date);
+            let week_max = (WEEKDAY_RANGE.end - WEEKDAY_RANGE.start) as usize;
+            let date_max = (DATE_RANGE.end - DATE_RANGE.start) as usize;
+            if self.dow.len() == week_max {
+                //weekday field contains `*`; refer to date field
+                date_matches
+            } else if self.dt.len() == date_max {
+                //date field contains `*`; refer to weekday field
+                dow_matches
+            } else {
+                date_matches || dow_matches
+            }
+        };
+        let month_matches = self.mon.contains(&(now.month() as u8));
+        let hour_match =    self.hr.contains(&(now.hour() as u8));
+        let minute_match =  self.mn.contains(&(now.minute() as u8));
+        month_matches && day_matches && hour_match && minute_match
     }
 }
 
