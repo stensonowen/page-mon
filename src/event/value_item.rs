@@ -24,15 +24,16 @@ use ast::*;
 
 pub type Range = ops::Range<u8>;
 
-pub struct ValueItem {
+pub struct ValueItem<'a, 'b> {
     //stores a Value as well as data to iterate through valid numbers
     current:    Option<u8>,
-    range:      Range,
-    values:     Value,
+    range:      &'a ops::Range<u8>,
+    values:     &'b Value,
 }
 
-impl ValueItem {
-    pub fn new(val: Value, range: Range) -> ValueItem {
+impl<'a, 'b> ValueItem<'a, 'b> {
+    pub fn new(val: &'a mut Value, range: &'a Range) -> ValueItem<'a, 'a> {
+        //get rid of 'b?
         ValueItem {
             current:    None,
             range:      range,
@@ -41,7 +42,7 @@ impl ValueItem {
     }
 }
 
-impl Iterator for ValueItem {
+impl<'a, 'b> Iterator for ValueItem<'a, 'b> {
     type Item = u8;
 
     fn next(&mut self) -> Option<u8> {

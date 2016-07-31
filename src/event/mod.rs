@@ -42,24 +42,28 @@
 
 //use std::{ops, cmp, u8};
 use std::ops;
+use std::collections::BTreeSet;
 
 pub mod value_item;
 use event::value_item::*;
-//mod next;
-//use event::next::Next;
+
 use ast::*;
 
 
+pub type Calendar = BTreeSet<u8>;
 
-impl Iterator for ContVal {
-    type Item = u8;
-
-    fn next(&mut self) -> Option<u8> {
-        None
+pub fn cal_from_vals(vals: &mut Vec<Value>, range: ops::Range<u8>) -> Calendar {
+    //let max_size = (range.end - range.start) as usize;
+    let mut cal = Calendar::new();
+    for mut value in vals.into_iter() {
+        let val_item = ValueItem::new(&mut value, &range);
+        for possibility in val_item.into_iter() {
+            cal.insert(possibility);
+        }
     }
-
-
+    cal
 }
+
 
 
 
