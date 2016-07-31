@@ -47,6 +47,8 @@ pub struct Calendar {
 }
 
 
+const MONTH_LENS: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];
+const WEEK_LEN: u8 = 7;
 impl Calendar {
     pub fn from_time(time: &mut Time) -> Calendar {
         Calendar {
@@ -57,17 +59,49 @@ impl Calendar {
             dow:    collect_vals(&mut time.weekday, WEEKDAY_RANGE),
         }
     }
-    pub fn get_month(&self, year: i32, month: u8) -> ValidSet {
-        let month_set = self.mon.clone();
-        let ref dow_set = self.dow;
-        //get the first of the month's day of the week. 0 = sunday
-        let first_day = Local.ymd(year, month as u32, 1).weekday().num_days_from_sunday();
-        
 
-
-        month_set
+    fn days_in_feb(year: i32) -> u8 {
+        if      year %   4 != 0     { 28 } 
+        else if year % 100 != 0     { 29 } 
+        else if year % 400 != 0     { 28 } 
+        else                        { 29 }
+    }
+    fn days_in_month(year: i32, month: u8) -> u8 {
+        //input: starting from 1, e.g. December is 12
+        if month == 2 {
+            Calendar::days_in_feb(year)
+        } else {
+            let index = (month - 1) as usize;
+            MONTH_LENS[index]
+        }
     }
 
+    pub fn get_month(&self, year: i32, month: u8) -> ValidSet {
+        //TODO: unit tests
+        let mut month_set = self.mon.clone();
+        let ref dow_set = self.dow;
+        //remove days not in this month:
+        let days_in_month = Calendar::days_in_month(year, month) + 1;
+        for i in days_in_month .. 32u8 {
+            month_set.remove(&i);
+        }
+        //get the first of the month's day of the week. 0 = sunday
+        let first_day = Local.ymd(year, month as u32, 1).weekday().num_days_from_sunday();
+        let offset = (WEEK_LEN - first_day as u8) % WEEK_LEN;
+        for weekday in dow_set.iter() {
+            let mut mult = 0;
+            loop {
+                let guess = weekday + mult * WEEK_LEN;
+                if guess >= days_in_month {
+                    break;
+                } else {
+                    month_set.insert(guess);
+                }
+                mult += 1;
+            }
+        }
+        month_set
+    }
 }
 
 
