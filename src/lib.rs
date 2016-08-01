@@ -90,4 +90,47 @@ mod tests {
             assert!(cal.fire_now(dt) == is_tu_th_sa || has_a_3);
         }
     }
+
+    /* Doesn't make sense to test these here
+     *  fire_now() doesn't adjust month lengths. if it's a valid DateTime, it 
+     *  assumes it's valid. Changing that doesn't pose a notable benefit.
+     *  In the future similar tests might be useful. But today is not that day.
+    #[test]
+    fn fire_now_feb_29_leap() {
+        //it's hard to test invalid dates, because the passed argument is a DateTime
+        //I think the only test to be done is feb 29 on a leap year
+        let mut cmd = croncfg::parse_Command("* * * * * https://test.com").unwrap();
+        let cal = Calendar::from_time(&mut cmd.time);
+        let time = Local.ymd(1972, 2, 29).and_hms(0, 0, 0);
+        assert!(cal.fire_now(time));
+    }
+
+    #[test]
+    fn fire_at_vals_feb_29_common() {
+        //now test feb 29 on a common year
+        let mut cmd = croncfg::parse_Command("* * * * * https://test.com").unwrap();
+        let cal = Calendar::from_time(&mut cmd.time);
+        assert!(cal.fire_at_vals(0,0,29,2,0) == false);
+    }
+    */
+
+
+    #[test]
+    fn fire_at_vals_invalid_zeros() {
+        //some fields have nonzero minimum values; test if they observe them
+        //it's hard to test invalid dates, because the passed argument is a DateTime
+        //I think the only test to be done is feb 29 on a leap year
+        let mut cmd = croncfg::parse_Command("* * * * * https://test.com").unwrap();
+        let cal = Calendar::from_time(&mut cmd.time);
+        //the date and month values cannot be zero; smallest values are `0 0 1 1 0`
+        assert!(cal.fire_at_vals(0,0,1,1,0) == true);
+        assert!(cal.fire_at_vals(0,0,0,1,0) == false);
+        assert!(cal.fire_at_vals(0,0,1,0,0) == false);
+        //let time = Local.ymd(1972, 2, 29).and_hms(0, 0, 0);
+        //assert!(cal.fire_now(time));
+    }
+
+    //That's probably all the tests of fire_X for now. Minute and hour don't really
+    //make sense to test, as they don't implement any functionality that date
+    //doesn't extend upon, so if there's something wrong date would be wrong (I hope)
 }

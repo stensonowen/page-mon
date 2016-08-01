@@ -106,16 +106,25 @@ impl Calendar {
     }
 
     pub fn fire_now(&self, now: DateTime<Local>) -> bool {
-        //if day_of_week is `*`, use day_of_month instead
-        //if day_of_month is `*`, use day_of_week instead
-        //if both are `*`, use either
-        //TODO: make whole thing one big A&&B&&C&&D so that not everything
-        // is computed unless it needs to be?
+        //datetimes are a little more pleasant to work with
+        //just u8's allow us to check validity of non-exisistant dates
+        self.fire_at_vals(now.minute()  as u8, 
+                          now.hour()    as u8,
+                          now.day()     as u8,
+                          now.month()   as u8,
+                          now.weekday().num_days_from_sunday() as u8)
+    }
+
+    pub fn fire_at_vals(&self, min: u8, hr: u8, dt: u8, mon: u8, dow: u8) -> bool {
+        //Date/DayOfWeek decision:
+        // if day_of_week is `*`, use day_of_month instead
+        // if day_of_month is `*`, use day_of_week instead
+        // if both are `*`, use either
+        //TODO: return one big A&&B&&C&&D to minimize computation?
+        //Difference between fire_now: this can be used to check impossible days
         let day_matches = {
-            let date        = now.day() as u8;
-            let day_of_week = now.weekday().num_days_from_sunday() as u8;
-            let dow_matches = self.dow.contains(&day_of_week);
-            let date_matches = self.dt.contains(&date);
+            let dow_matches = self.dow.contains(&dow);
+            let date_matches = self.dt.contains(&dt);
             let week_max = (WEEKDAY_RANGE.end - WEEKDAY_RANGE.start) as usize;
             let date_max = (DATE_RANGE.end - DATE_RANGE.start) as usize;
             if self.dow.len() == week_max {
@@ -128,9 +137,9 @@ impl Calendar {
                 date_matches || dow_matches
             }
         };
-        let month_matches = self.mon.contains(&(now.month() as u8));
-        let hour_match =    self.hr.contains(&(now.hour() as u8));
-        let minute_match =  self.mn.contains(&(now.minute() as u8));
+        let month_matches = self.mon.contains(&mon);
+        let hour_match =    self.hr.contains(&hr);
+        let minute_match =  self.mn.contains(&min);
         month_matches && day_matches && hour_match && minute_match
     }
 }
