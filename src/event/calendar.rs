@@ -17,6 +17,8 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
+//TODO: add `verify()` somewhere
+
 use std::ops;
 use std::collections::BTreeSet;
 
@@ -117,15 +119,12 @@ impl Calendar {
             let week_max = (WEEKDAY_RANGE.end - WEEKDAY_RANGE.start) as usize;
             let date_max = (DATE_RANGE.end - DATE_RANGE.start) as usize;
             if self.dow.len() == week_max {
-                println!("deferring to date");
                 //weekday field contains `*`; refer to date field
                 date_matches
             } else if self.dt.len() == date_max {
-                println!("deferring to weekday");
                 //date field contains `*`; refer to weekday field
                 dow_matches
             } else {
-                println!("either");
                 date_matches || dow_matches
             }
         };

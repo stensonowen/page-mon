@@ -125,9 +125,13 @@ Skip = "/" <Num>;
 ContVal: ast::ContVal = {   
     // "Continuous Values", i.e. not a skip or constant
     "*"                 => ast::ContVal::Asterisk,
-    <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m),    
-        //TODO: would this be the place to corrent the range 
-        // upper bound asymmetry?
+    <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m+1),    
+    //Range Asymmetry: the cron man page defines ranges
+    // to be inclusive, but Rust ranges omit the second 
+    // value, e.g. 0..42 includes 0 but not 42.
+    //It it best to correct for this error soon.
+    //There can be some logic-checking on the AST after 
+    // parsing finishes, but it shouldn't mutate it.
 };
     
 //Case insensitive by using regex with the `i` flag
