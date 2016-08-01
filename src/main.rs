@@ -18,36 +18,32 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
-mod event;
-//#[allow(unused_imports)]
-//use event::HasNext;
+/* main.rs is a mess
+ *  mostly used to test stuff before it goes in lib.rs as a unit test.
+ *  pardon the sloppiness
+ */
 
+mod event;
 pub mod croncfg;
 pub mod ast;
 
-use event::value_item::ValueItem;
-use event::*;
 use event::calendar::*;
-//extern crate chrono;
-//use chrono::{Local, TimeZone};
+
+extern crate chrono;
+use chrono::Local;
 
 fn main() {
 
     //let tmp = Local.isoywd(2016, 1, chrono::Weekday::Mon);
     //println!("TMP: {}", tmp);
 
-    let mut tmp = croncfg::parse_Command("1-10,10-20/2,20-30/3 * * * 0 https://test.com").unwrap();
+  //let mut tmp = croncfg::parse_Command("1-10,10-20/2,20-30/3 * * * 0 https://test.com").unwrap();
+    let mut tmp = croncfg::parse_Command("* * * * 0 https://test.com").unwrap();
     //let tmp: ast::Value = test.minute[0].clone();
     //let range = 0..60;
     let cal = Calendar::from_time(&mut tmp.time);
-    println!("{:?}", cal);
-    
-    //let cal = collect_vals(&mut tmp.time.weekday, range);
-    //for i in cal.iter() {
-    //    print!("{}, ", i);
-    //}
-
-    println!("");
+    let fire_now = cal.fire_now(Local::now());
+    println!("{:?}", fire_now);
     //for mut itr in test.minute.into_iter() {
     //    let range = 0..60;
     //    let vi = ValueItem::new(&mut itr, &range);

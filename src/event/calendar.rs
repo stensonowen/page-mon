@@ -23,11 +23,10 @@ use std::collections::BTreeSet;
 extern crate chrono;
 use self::chrono::{TimeZone, Local, Datelike, Timelike, DateTime};
 
-//pub mod value_itr;
 use event::value_itr::*;
 use ast::{Time, Value};
 
-
+#[allow(dead_code)]
 const MINUTE_RANGE: ops::Range<u8> = 0..60;
 const HOUR_RANGE:   ops::Range<u8> = 0..24;
 const DATE_RANGE:   ops::Range<u8> = 1..32;
@@ -47,8 +46,7 @@ pub struct Calendar {
 }
 
 
-const MONTH_LENS: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];
-const WEEK_LEN: u8 = 7;
+#[allow(dead_code)]
 impl Calendar {
     pub fn from_time(time: &mut Time) -> Calendar {
         Calendar {
@@ -67,6 +65,7 @@ impl Calendar {
         else                        { 29 }
     }
     fn days_in_month(year: i32, month: u8) -> u8 {
+        const MONTH_LENS: [u8;12] = [31,0,31,30,31,30,31,31,30,31,30,31];
         //input: starting from 1, e.g. December is 12
         if month == 2 {
             Calendar::days_in_feb(year)
@@ -87,11 +86,12 @@ impl Calendar {
         }
         //get the first of the month's day of the week. 0 = sunday
         let first_day = Local.ymd(year, month as u32, 1).weekday().num_days_from_sunday();
-        let offset = (WEEK_LEN - first_day as u8) % WEEK_LEN;
+        let week_len = WEEKDAY_RANGE.end - WEEKDAY_RANGE.start;
+        let offset = (week_len - first_day as u8) % week_len;
         for weekday in dow_set.iter() {
             let mut mult = 0;
             loop {
-                let guess = weekday + mult * WEEK_LEN;
+                let guess = weekday + offset + mult * week_len;
                 if guess >= days_in_month {
                     break;
                 } else {
@@ -117,12 +117,15 @@ impl Calendar {
             let week_max = (WEEKDAY_RANGE.end - WEEKDAY_RANGE.start) as usize;
             let date_max = (DATE_RANGE.end - DATE_RANGE.start) as usize;
             if self.dow.len() == week_max {
+                println!("deferring to date");
                 //weekday field contains `*`; refer to date field
                 date_matches
             } else if self.dt.len() == date_max {
+                println!("deferring to weekday");
                 //date field contains `*`; refer to weekday field
                 dow_matches
             } else {
+                println!("either");
                 date_matches || dow_matches
             }
         };
