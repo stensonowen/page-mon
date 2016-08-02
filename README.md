@@ -39,7 +39,7 @@ Here is the context-free grammar used to parse the cron-like config file, where 
     DayOfWeek   →   "SUN"  |  "MON"  |  "TUE"  |  ...  |  "SAT"
 ```
 
-### Approaches to Scheduling
+### Approaches to Scheduling;
 This is a weird time for me to be writing this, considering I'm 90% of the way through one of the approaches, but I'm reconsidering my choice and thought I'd document the comparison. 
 This problem boils down to how to get from the structure defined in `ast.rs` to a `chrono::datetime` object representing the next instant an event should be fired. The two approaches here are to 
 (1) write the necessary framework to be able to call `.next()` on a Time object and get a datetime and then pausing until an event is due, or 
@@ -57,4 +57,5 @@ In any case, I think I'm going to explore what Option (2) would look like. It se
 
 EDIT: For now, as a placeholder, I'm just going to do something like what [Minix/cron.c](http://www.cise.ufl.edu/~cop4600/cgi-bin/lxr/http/source.cgi/commands/simple/cron.c) does and check every minute for which events have to fire. How it ends up is anyone's guess, though.
 
-
+### Contact
+I've been meaning to check out [Pushjet](http://docs.pushjet.io/) for a while, and now that I've taken the time to read through the docs I really like it. I intend for the primary method of contact to be via pushjet. It'll be trivial to actually send the message, but the user will have to set up their phone/service (it's not hard!). I've included a sample config file with the pushjet data [here](src/pushjet.json), but in the future it might go in the primary config file or something.

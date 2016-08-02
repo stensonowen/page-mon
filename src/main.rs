@@ -27,33 +27,15 @@ mod event;
 pub mod croncfg;
 pub mod ast;
 
-use event::calendar::*;
+//use event::calendar::*;
+use event::pushjet;
 
-extern crate chrono;
-use chrono::Local;
+//extern crate chrono;
+//use chrono::Local;
 
 fn main() {
 
-    //let tmp = Local.isoywd(2016, 1, chrono::Weekday::Mon);
-    //println!("TMP: {}", tmp);
+    println!("Result: {:?}", pushjet::load_config());
 
-  //let mut tmp = croncfg::parse_Command("1-10,10-20/2,20-30/3 * * * 0 https://test.com").unwrap();
-    let mut tmp = croncfg::parse_Command("* * * * 0 https://test.com").unwrap();
-    //let tmp: ast::Value = test.minute[0].clone();
-    //let range = 0..60;
-    let cal = Calendar::from_time(&mut tmp.time);
-    let fire_now = cal.fire_now(Local::now());
-    println!("{:?}", fire_now);
-    //for mut itr in test.minute.into_iter() {
-    //    let range = 0..60;
-    //    let vi = ValueItem::new(&mut itr, &range);
-    //    for i in vi.into_iter() {
-    //        println!("\t{}", i);
-    //    }
-    //}
-    //for i in tmp {
-    //    println!("\t{:?}", i);
-    //}
-    //assert_eq!(Local.ymd(1970, 02, 05).and_hms(00, 00, 00), 
-    //           test.next_weekday_after_time(Local.ymd(1970, 02, 01).and_hms(00, 00, 00)));
+
 }
