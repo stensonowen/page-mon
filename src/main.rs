@@ -24,16 +24,19 @@
  */
 
 mod event;
+mod action;
 pub mod croncfg;
 pub mod ast;
 
-use event::pushjet::{load_config, contact};
+//use event::pushjet::{load_config, contact};
+//use action::pushjet::{load_config, contact};
+use action::scrape::*;
 
-extern crate url;
+extern crate hyper;
 
 
 fn main() {
-    
+    /*
     let (url, secret) = load_config().unwrap();
     let message = "this is a 'message test', with bells! and whistles?";
     let level = 3u8;
@@ -42,5 +45,11 @@ fn main() {
     
     let res = contact(url, secret.as_str(), message, title, level, link);
     println!("res: {:?}", res);
+    */
+    let url = "http://www.teamfortress.tv";
+    //let url = "https://icanhazip.com/";
+    let url = hyper::Url::parse(url).unwrap();
+    let res = get_url(url);
+    println!("{:?}", res);
     
 }
