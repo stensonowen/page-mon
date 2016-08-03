@@ -21,14 +21,15 @@
 
 extern crate json;
 extern crate hyper;
+extern crate url;
 
 use std::env;
 use std::path::PathBuf;
 use std::fs::File;
 use std::error::Error;
 use std::io::Read;
-//use hyper::*;
-//use hyer::url;
+use self::url::form_urlencoded::Serializer;
+use self::hyper::header::ContentType;
 
 const CONFIG_FILE: &'static str = "pushjet.json";
 const DEFAULT_URL: &'static str = "https://api.pushjet.io";
@@ -99,3 +100,41 @@ pub fn load_config() -> Result<(hyper::Url,String),String> {
 
     Ok((url, secret))
 }
+
+pub fn contact(pushjet_url: hyper::Url, secret: &str, message: &str, 
+               title: &str, level: u8, link: &str) -> Result<String,String> {
+    //on failure: error description wrapped in Err()
+    //on success: return response (for logging?) in Ok()
+    //  could just return ()? does anyone care? Will there be logging?
+    let url = pushjet_url.join("message").unwrap();
+    let client = hyper::Client::new();
+
+    //serialize data
+    let payload: String = Serializer::new(String::new())
+                    .append_pair("secret",  secret)
+                    .append_pair("message", message)
+                    .append_pair("title",   title)
+                    .append_pair("level",   level.to_string().as_str())
+                    .append_pair("link",    link)
+                    .finish();
+
+    //set up and make request
+    let res = client.post(url)
+                    .header(ContentType::form_url_encoded())
+                    .body(payload.as_bytes())
+                    .send();
+
+    //return status code or error message
+    match res {
+        Err(e) => Err(e.description().to_string()),
+        Ok(t)  => Ok(t
+                     .status
+                     .canonical_reason()
+                     .unwrap_or("Success: reason unknown")
+                     .to_string()),
+    }
+}
+
+
+
+

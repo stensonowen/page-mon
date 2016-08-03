@@ -25,7 +25,7 @@ extern crate chrono;
 
 #[cfg(test)]
 mod tests {
-    use super::croncfg;
+    use super::croncfg::{parse_Line, parse_Command};
     use chrono::{Local, TimeZone, Datelike, Timelike, DateTime};
     use event::calendar::Calendar;
 
@@ -39,12 +39,24 @@ mod tests {
                  dt.day(),      dt.hour(),  dt.minute());
     }
 
+    #[test]
+    fn parse_lines() {
+        //make sure parsing isn't broken
+        assert!(parse_Line("* * * * * http://gnu.org").is_ok());
+        assert!(parse_Line("1 2-9 */10 jan 1-9/3 https://gnu.org").is_ok());
+        assert!(parse_Line("1/1 * * * * https://gnu.org").is_err());
+        assert!(parse_Line("*****https://gnu.org -> text").is_ok());
+        assert!(parse_Line("*****https://gnu.org -> EMail").is_ok());
+        assert!(parse_Line("*****https://gnu.org -> foo").is_err());
+        assert!(parse_Line(" # just a comment ").is_ok());
+    }
+
     #[ignore]
     #[test]
     fn fire_now_weekday_0() {
         //fire every minute of every Sunday
         //check every day of Jan 1970 that it only runs on Sundays
-        let mut cmd = croncfg::parse_Command("* * * * 0 https://test.com").unwrap();
+        let mut cmd = parse_Command("* * * * 0 https://test.com").unwrap();
         let cal = Calendar::from_time(&mut cmd.time);
         let time = Local.ymd(1970, 1, 1).and_hms(0, 0, 0);
         assert!(cal.fire_now(time) == false);
@@ -62,7 +74,7 @@ mod tests {
     fn fire_now_date_0() {
         //fire every even date 
         //check every day of Jan 1970 that it only runs on even dates
-        let mut cmd = croncfg::parse_Command("* * */2 * * https://test.com").unwrap();
+        let mut cmd = parse_Command("* * */2 * * https://test.com").unwrap();
         let cal = Calendar::from_time(&mut cmd.time);
         let time = Local.ymd(1970, 1, 1).and_hms(0, 0, 0);
         for i in 1 .. 32 {
@@ -77,7 +89,7 @@ mod tests {
     #[test]
     fn fire_now_date_wd_0() {
         //fire on every Tue/Thu/Sat OR any dates with a 3 in them
-        let mut cmd = croncfg::parse_Command("* * 3,13,23,30-31 * 2-6/2
+        let mut cmd = parse_Command("* * 3,13,23,30-31 * 2-6/2
                                              https://test.com").unwrap();
         let cal = Calendar::from_time(&mut cmd.time);
         let time = Local.ymd(1970, 1, 1).and_hms(0, 0, 0);
@@ -115,19 +127,18 @@ mod tests {
     */
 
 
+    #[ignore]
     #[test]
     fn fire_at_vals_invalid_zeros() {
         //some fields have nonzero minimum values; test if they observe them
         //it's hard to test invalid dates, because the passed argument is a DateTime
         //I think the only test to be done is feb 29 on a leap year
-        let mut cmd = croncfg::parse_Command("* * * * * https://test.com").unwrap();
+        let mut cmd = parse_Command("* * * * * https://test.com").unwrap();
         let cal = Calendar::from_time(&mut cmd.time);
         //the date and month values cannot be zero; smallest values are `0 0 1 1 0`
         assert!(cal.fire_at_vals(0,0,1,1,0) == true);
         assert!(cal.fire_at_vals(0,0,0,1,0) == false);
         assert!(cal.fire_at_vals(0,0,1,0,0) == false);
-        //let time = Local.ymd(1972, 2, 29).and_hms(0, 0, 0);
-        //assert!(cal.fire_now(time));
     }
 
     //That's probably all the tests of fire_X for now. Minute and hour don't really

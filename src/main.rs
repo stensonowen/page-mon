@@ -27,15 +27,20 @@ mod event;
 pub mod croncfg;
 pub mod ast;
 
-//use event::calendar::*;
-use event::pushjet;
+use event::pushjet::{load_config, contact};
 
-//extern crate chrono;
-//use chrono::Local;
+extern crate url;
+
 
 fn main() {
-
-    println!("Result: {:?}", pushjet::load_config());
-
-
+    
+    let (url, secret) = load_config().unwrap();
+    let message = "this is a 'message test', with bells! and whistles?";
+    let level = 3u8;
+    let title = "title test";
+    let link = "https://teamfortress.tv";
+    
+    let res = contact(url, secret.as_str(), message, title, level, link);
+    println!("res: {:?}", res);
+    
 }
