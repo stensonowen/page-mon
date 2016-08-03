@@ -46,10 +46,10 @@ fn main() {
     let res = contact(url, secret.as_str(), message, title, level, link);
     println!("res: {:?}", res);
     */
-    let url = "http://www.teamfortress.tv";
-    //let url = "https://icanhazip.com/";
+    //let url = "https://en.wikipedia.org/wiki/Ancient_Rome";
+    let url = "https://reddit.com";
     let url = hyper::Url::parse(url).unwrap();
-    let res = get_url(url);
-    println!("{:?}", res);
+    let diff = compare(url);
+    println!("{:?}", diff);
     
 }
