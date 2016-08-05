@@ -30,13 +30,25 @@
 //TODO: don't forget that 0 = 7 = Sunday
 
 use std::fmt::{Debug, Formatter, Error};
+use std::path::Path;
 
 
 pub enum Line {
     //separated by newlines
     Comment,
     Cmd(Command),
+    VarSet(Var),
 }
+
+pub enum Var {
+    //Just stores data. Cannot assign multiples at the moment
+    Email(String),      //Email Address      
+    PJ_Secret(String),  //Pushjet Secret
+    PJ_Url(String),     //Pushjet Url
+    DataDir(String),    //Directory of data storage
+}
+
+
 
 //#[derive(Debug)]
 pub struct Command {

@@ -51,8 +51,32 @@ grammar;
 
 pub Line: ast::Line = {
     <cmd:Command>   => ast::Line::Cmd(cmd),
-    <Comment>
+    <Comment>,
+    <Var>           => ast::Line::VarSet(<>),
 };
+
+pub Var: ast::Var = {
+    //r"(?i)email" "=" <v:Email>              => ast::Var::Email(v.to_string()),
+    //r"(?i)pushjet_secret" "=" <v:Secret>    => ast::Var::PJ_Secret(v),
+    //r"(i)dir" "=" <v:Dir>                   => ast::Var::DataDir(v.to_string()),
+    //"let " r"(?i)dir" "=" <v:Text>     => ast::Var::DataDir(v),
+};
+
+//Variable name: alphanumeric chars
+//VarLHS = r"[A-Za-z]\w*";
+//Text = r"\w+";
+
+//Dir = "/.*";
+//Email regex
+//Email = r"[\w._%+-]+@[\w.-]+\.[\w]{2,}";
+
+//Pushjet Secret regex
+//Secret = r"[0-9a-fA-F]{32}";
+
+//misc text; used for directory path
+//will `\S` allow excaped spaces?
+//Text = r"\S*";
+
 
 
 pub Command: ast::Command = {
