@@ -167,12 +167,19 @@ pub fn url_to_str(url: &hyper::Url) -> String {
     //can't just use the domain, because there could be collisions
     //if we can't, just use the url itself (without the forward slashes)
     //TODO: use domain in fromt of path segments
+    //TODO: make sure title is at least like 1 or 2 parts long
+    //TODO: add `directory` part to config grammar?
+    //TODO: collisions are still not uncommon. Maybe use base64 of a 
+    // hash of the url and Time object?
     let split = url.path_segments();
     if let Some(s) = split {
-        let parts: Vec<&str> = s.into_iter().collect();
-        let sum = parts.join("_");
-        if !sum.is_empty() {
-            return sum
+        if let Some(d) = url.domain() {
+            let parts: Vec<&str> = s.into_iter().collect();
+            let mut sum = d.to_owned();
+            sum.push_str(&parts.join("_"));
+            if parts.len() > 1 {
+                return sum;
+            }
         }
     } 
     //"/" and \0 are the only invalid characters in a filename
