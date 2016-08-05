@@ -21,6 +21,7 @@
 
 extern crate hyper;
 extern crate diff;
+extern crate select;
 
 //use std::env;
 //use std::path::PathBuf;
@@ -31,6 +32,40 @@ use self::hyper::header::*;
 
 //use a descriptive user agent? or a generic one?
 const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
+//What qualifies as html that's too long for LCS, 
+//which should instead be compared tag-by-tag
+const DIFF_THRESHOLD: usize = 10_000;
+
+pub fn diff(old: &str, new: &str) -> String {
+    //even w/ dynamic programming, this doesn't scale great
+    //a 521kb String took >3 minutes w/ 100% cpu on 1 core
+    //takes about 1/2 a second for a 1.4k String,
+    // about as long as a 13-byte String
+    let delta = diff::lines(&old, &new);
+    let mut recent = String::new();
+    for diff in delta {
+        if let diff::Result::Right(change) = diff {
+            recent.push('\n');
+            recent.push_str(change);
+        }
+    }
+    recent
+}
+
+pub fn decompose_and_diff(old: &str, new: &str) -> String {
+    //use html5ever to extract text, then only diff the content
+    //shouldn't care about (certain) formatting or javascript
+    //only use content tags like `p`, `hN`, ... ?
+    let old_html = select::document::Document::from(old);
+    //let new_html = select::document::Document::from(new);
+    //for node in old_html.find(select::predicate::Name("p")).iter() {
+    for node in old_html.find(select::predicate::Name("h2")).iter() {
+        println!("-\t{}", node.text());
+    }
+    
+    String::new()
+}
+
 
 pub fn compare(url: hyper::Url) -> Result<String,String> {
     //`old` has been converted to bytes, is that a problem?
@@ -44,34 +79,41 @@ pub fn compare(url: hyper::Url) -> Result<String,String> {
     //try to look up cached content
     let old = match old {
         Ok(o)  => o,
-        Err(e) => {
+        Err(e) => 
             //no `old` file to compare to; (try to) create one and throw an Err
-            println!("About to create file: '{}'", filename);
-            let mut file = match File::create(filename) {
-                Ok(f)  => f,
-                Err(r) => return Err(format!("Failed to open cache ({}), and failed to create cache: {}",
-                                             e, r.description().to_string())),
-            };
-            return match file.write_all(new.as_bytes()) {
-                Ok(_)  => Err(format!("Cache made because none was found ({})",
-                                      e)),
-                Err(r) => Err(format!("Failed to open cache ({}), and failed to write cache: {}",
-                                      e, r.description().to_string())),
+            return match set_cache(&filename, &new) {
+                Ok(_)  => Err(format!("Cache absent ({}); new one made", 
+                                      e.to_string())),
+                Err(f) => Err(format!("Cache absent ({});creation failed: {}", 
+                                      e, f).to_string()),
             }
-        }
     };
-    let delta = diff::lines(&old, &new);
-    let mut recent = String::new();
-    for diff in delta {
-        if let diff::Result::Right(change) = diff {
-            recent.push('\n');
-            recent.push_str(change);
-        }
-    }
-    if recent.is_empty() {
+
+    decompose_and_diff(&old, &new);
+    let diff = diff(&old, &new);
+    if diff.is_empty() {
         Err("No change".to_string())
     } else {
-        Ok(recent)
+        //new != old
+        match set_cache(&filename, &new) {
+            Ok(_)  => Ok(diff),
+            Err(e) => Err(format!("Page changed, but couldn't be cached: {}", 
+                                  e).to_string()),
+        }
+    }
+}
+
+pub fn set_cache(filename: &str, contents: &str) -> Result<(),String> {
+    //create or replace old file
+    let mut file = match File::create(filename) {
+        Ok(f)  => f,
+        Err(e) => return Err(format!("Failed to create cache: {}", 
+                                     e.description().to_string())),
+    };
+    match file.write_all(contents.as_bytes()) {
+        Ok(_)  => Ok(()),
+        Err(e) => Err(format!("Failed to write cache: {}", 
+                              e.description().to_string())),
     }
 }
 
@@ -87,6 +129,7 @@ pub fn url_to_str(url: &hyper::Url) -> String {
             return sum
         }
     } 
+    //"/" and \0 are the only invalid characters in a filename
     url.as_str().replace("/", "_")
 }
 
@@ -135,38 +178,3 @@ pub fn get_url(url: hyper::Url) -> Result<String,String> {
         }
     }
 }
-
-/*
-pub fn contact(pushjet_url: hyper::Url, secret: &str, message: &str, 
-               title: &str, level: u8, link: &str) -> Result<String,String> {
-    //on failure: error description wrapped in Err()
-    //on success: return response (for logging?) in Ok()
-    //  could just return ()? does anyone care? Will there be logging?
-    let url = pushjet_url.join("message").unwrap();
-    let client = hyper::Client::new();
-
-    //serialize data
-    let payload: String = Serializer::new(String::new())
-                    .append_pair("secret",  secret)
-                    .append_pair("message", message)
-                    .append_pair("title",   title)
-                    .append_pair("level",   level.to_string().as_str())
-                    .append_pair("link",    link)
-                    .finish();
-
-    //set up and make request
-    let res = client.post(url)
-                    .header(ContentType::form_url_encoded())
-                    .body(payload.as_bytes())
-                    .send();
-
-    //return status code or error message
-    match res {
-        Err(e) => Err(e.description().to_string()),
-        Ok(t)  => Ok(t
-                     .status
-                     .canonical_reason()
-                     .unwrap_or("Success: reason unknown")
-                     .to_string()),
-    }
-}*/

@@ -47,8 +47,12 @@ fn main() {
     println!("res: {:?}", res);
     */
     //let url = "https://en.wikipedia.org/wiki/Ancient_Rome";
-    let url = "https://reddit.com";
+    //let url = "https://api.twitch.tv/kraken/channels/b4nny";
+    //let url = "http://icanhazip.com/";
+    let url = "https://news.ycombinator.com/item?id=12227922";
+    //let url = "https://reddit.com";
     let url = hyper::Url::parse(url).unwrap();
+    println!("Downloaded");
     let diff = compare(url);
     println!("{:?}", diff);
     
