@@ -33,6 +33,7 @@ pub mod ast;
 use action::scrape::*;
 
 extern crate hyper;
+extern crate diff;
 
 
 fn main() {
@@ -49,11 +50,17 @@ fn main() {
     //let url = "https://en.wikipedia.org/wiki/Ancient_Rome";
     //let url = "https://api.twitch.tv/kraken/channels/b4nny";
     //let url = "http://icanhazip.com/";
+    
+    //let textA = "ab\ncde\nfg";
+    //let textB = "ab\nZde\nfg";
+    //println!("{:?}", diff::chars(textA, textB));
+    //*
     let url = "https://news.ycombinator.com/item?id=12227922";
     //let url = "https://reddit.com";
     let url = hyper::Url::parse(url).unwrap();
     println!("Downloaded");
     let diff = compare(url);
     println!("{:?}", diff);
+    //*/
     
 }

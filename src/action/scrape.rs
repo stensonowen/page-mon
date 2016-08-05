@@ -23,12 +23,13 @@ extern crate hyper;
 extern crate diff;
 extern crate select;
 
-//use std::env;
-//use std::path::PathBuf;
 use std::fs::File;
 use std::error::Error;
 use std::io::{Read, Write};
+
 use self::hyper::header::*;
+use self::select::predicate::Name;
+use self::select::document::Document;
 
 //use a descriptive user agent? or a generic one?
 const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
@@ -36,34 +37,72 @@ const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebK
 //which should instead be compared tag-by-tag
 const DIFF_THRESHOLD: usize = 10_000;
 
-pub fn diff(old: &str, new: &str) -> String {
+pub fn diff_text(old: &str, new: &str) -> String {
     //even w/ dynamic programming, this doesn't scale great
     //a 521kb String took >3 minutes w/ 100% cpu on 1 core
     //takes about 1/2 a second for a 1.4k String,
     // about as long as a 13-byte String
-    let delta = diff::lines(&old, &new);
-    let mut recent = String::new();
-    for diff in delta {
+    let delta = diff::chars(&old, &new);
+    rhs_of_diff(&old, &new)
+    //let mut recent = String::new();
+    //for diff in delta {
+    //    if let diff::Result::Right(change) = diff {
+    //        recent.push('\n');
+    //        recent.push_str(change);
+    //    }
+    //}
+    //recent
+}
+
+pub fn rhs_of_diff(l: &str, r: &str) -> String {
+    //TODO: maybe include context?
+    let mut rhs = String::new();
+    let differences = diff::chars(&l, &r);
+    let mut continuous = true;
+    for diff in differences {
         if let diff::Result::Right(change) = diff {
-            recent.push('\n');
-            recent.push_str(change);
+            rhs.push(change)
+        } else if continuous {
+            //add newlines if `Both` or `Left` separates two `Right`s
+            rhs.push('\n');
+            continuous = false;
         }
     }
-    recent
+    rhs
+
 }
 
 pub fn decompose_and_diff(old: &str, new: &str) -> String {
     //use html5ever to extract text, then only diff the content
     //shouldn't care about (certain) formatting or javascript
     //only use content tags like `p`, `hN`, ... ?
+    //`title`, `p`, `h1..h6`, `div/span`?, `ol`, `ul`, `li`?
+    let tags = vec![Name("title"), Name("h1"), 
+                    Name("h2"), Name("h3"), Name("h4"), 
+                    Name("h5"), Name("h6"), Name("p")];
     let old_html = select::document::Document::from(old);
-    //let new_html = select::document::Document::from(new);
-    //for node in old_html.find(select::predicate::Name("p")).iter() {
-    for node in old_html.find(select::predicate::Name("h2")).iter() {
-        println!("-\t{}", node.text());
+    let new_html = select::document::Document::from(new);
+    let mut diff = String::new();
+    for tag in tags {
+        let old_elems = old_html.find(tag);
+        let new_elems = new_html.find(tag);
+        let elems = old_elems.iter().zip(new_elems.iter());
+        for (old_elem, new_elem) in elems {
+            let diff_elem = rhs_of_diff(&old_elem.text(),
+                                        &new_elem.text());
+            diff.push_str(&diff_elem);
+            diff.push('\n');
+            //let deltas = diff::chars(&old_elem.text(), &new_elem.text());
+            //for delta in deltas {
+            //    if let diff::Result::Right(change) = delta { 
+            //        diff.push(change);
+            //    }
+            //}
+            ////only sometimes
+            //diff.push('\n');
+        }
     }
-    
-    String::new()
+    diff
 }
 
 
@@ -89,8 +128,14 @@ pub fn compare(url: hyper::Url) -> Result<String,String> {
             }
     };
 
-    decompose_and_diff(&old, &new);
-    let diff = diff(&old, &new);
+    //decide which method to use to diff text
+    //TODO: maybe recognize JSON and treat it differently?
+    println!("Using `decompose_and_diff`: {}", new.len() > DIFF_THRESHOLD);
+    let diff_fn = match new.len() > DIFF_THRESHOLD {
+        true  => decompose_and_diff,
+        false => diff_text,
+    };
+    let diff = diff_fn(&old, &new);
     if diff.is_empty() {
         Err("No change".to_string())
     } else {
@@ -121,6 +166,7 @@ pub fn url_to_str(url: &hyper::Url) -> String {
     //try to make descriptive name out of url to use for file cache
     //can't just use the domain, because there could be collisions
     //if we can't, just use the url itself (without the forward slashes)
+    //TODO: use domain in fromt of path segments
     let split = url.path_segments();
     if let Some(s) = split {
         let parts: Vec<&str> = s.into_iter().collect();
