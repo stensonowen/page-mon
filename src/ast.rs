@@ -43,8 +43,8 @@ pub enum Line {
 pub enum Var {
     //Just stores data. Cannot assign multiples at the moment
     Email(String),      //Email Address      
-    PJ_Secret(String),  //Pushjet Secret
-    PJ_Url(String),     //Pushjet Url
+    PjSecret(String),  //Pushjet Secret
+    PjUrl(String),     //Pushjet Url
     DataDir(String),    //Directory of data storage
 }
 

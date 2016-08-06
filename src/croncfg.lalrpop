@@ -56,27 +56,25 @@ pub Line: ast::Line = {
 };
 
 pub Var: ast::Var = {
-    //r"(?i)email" "=" <v:Email>              => ast::Var::Email(v.to_string()),
-    //r"(?i)pushjet_secret" "=" <v:Secret>    => ast::Var::PJ_Secret(v),
-    //r"(i)dir" "=" <v:Dir>                   => ast::Var::DataDir(v.to_string()),
-    //"let " r"(?i)dir" "=" <v:Text>     => ast::Var::DataDir(v),
+    //all strings must be enclosed in quotes
+    //example line: `Email = "stensonowen@gmail.com"`
+    r"(?i)email"  "=" <v:Text>  => ast::Var::Email(   v.to_string()),
+    r"(?i)secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
+    r"(?i)url"    "=" <v:Url>   => ast::Var::PjUrl(   v.to_string()),
+    r"(?i)dir"    "=" <v:Dir>   => ast::Var::DataDir( v.to_string()),
 };
 
-//Variable name: alphanumeric chars
-//VarLHS = r"[A-Za-z]\w*";
-//Text = r"\w+";
+//Text:
+//used for Email and Secret (in lieu of different regexes which 
+// cause lalrpop to error even though they're unambiguous
+//Should just match misc strings I guess
+Text = r#""[\w@\.]+""#;
+//Email = r#""\w+@"# Url r#"""#;
+//Secret = r#""[0-9a-fA-F]{32}""#;
 
-//Dir = "/.*";
-//Email regex
-//Email = r"[\w._%+-]+@[\w.-]+\.[\w]{2,}";
-
-//Pushjet Secret regex
-//Secret = r"[0-9a-fA-F]{32}";
-
-//misc text; used for directory path
-//will `\S` allow excaped spaces?
-//Text = r"\S*";
-
+//Directory pattern: must be absolute path
+//I guess this means Windows is out
+Dir = r#""/.*""#;
 
 
 pub Command: ast::Command = {
