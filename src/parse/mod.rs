@@ -1,4 +1,5 @@
-/*	Periodically crawl web pages and alert the user of changes 
+/*	Periodically crawl web pages and alert the user of changes
+ *
  *  Copyright (C) 2016  Owen Stenson
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -17,11 +18,24 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
-/* mod.rs
- * Organize calls to scrape, save, compare, and send data
- */
+//Parse all of the data from the input file more comprehensively than
+// ast.rs can on its own
 
+//mod event;
+//mod croncfg;
+//use croncfg;
+//use self::croncfg;
+//pub mod ast;
+//use ast::*;
 
-//pub mod pushjet;
-//pub mod scrape;
+pub mod croncfg;
+pub mod ast;
+
+//use event::pushjet::{load_config, contact};
+//use action::pushjet::{load_config, contact};
+//use action::scrape::*;
+
+pub fn parse() {
+    let test = croncfg::parse_Line("*****http://gnu.org");
+}
 

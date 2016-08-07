@@ -29,7 +29,7 @@ use std::io::{Read, Write};
 
 use self::hyper::header::*;
 use self::select::predicate::Name;
-use self::select::document::Document;
+//use self::select::document::Document;
 
 //use a descriptive user agent? or a generic one?
 const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
@@ -42,7 +42,7 @@ pub fn diff_text(old: &str, new: &str) -> String {
     //a 521kb String took >3 minutes w/ 100% cpu on 1 core
     //takes about 1/2 a second for a 1.4k String,
     // about as long as a 13-byte String
-    let delta = diff::chars(&old, &new);
+    //let delta = diff::chars(&old, &new);
     rhs_of_diff(&old, &new)
     //let mut recent = String::new();
     //for diff in delta {

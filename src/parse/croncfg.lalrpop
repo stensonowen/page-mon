@@ -24,7 +24,7 @@
 // vim: set syntax=rust:
 
 use std::str::FromStr;
-use ast;
+use super::ast;
 
 grammar;
 
@@ -101,7 +101,7 @@ Time: ast::Time = {
 };
     
 
-use ast::{ZERO, ONE, STAR};
+use super::ast::{ZERO, ONE, STAR};
 Nickname: ast::Time = {
     r"(?i)@yearly"  => ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
     r"(?i)@annually"=> ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),

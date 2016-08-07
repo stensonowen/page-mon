@@ -30,7 +30,6 @@
 //TODO: don't forget that 0 = 7 = Sunday
 
 use std::fmt::{Debug, Formatter, Error};
-use std::path::Path;
 
 
 pub enum Line {

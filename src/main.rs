@@ -25,16 +25,18 @@
 
 mod event;
 mod action;
-pub mod croncfg;
-pub mod ast;
+//pub mod croncfg;
+//pub mod ast;
 
 //use event::pushjet::{load_config, contact};
 //use action::pushjet::{load_config, contact};
-use action::scrape::*;
+//use action::scrape::*;
 
 extern crate hyper;
 extern crate diff;
 
+pub mod parse;
+use parse::*;
 
 fn main() {
     /*
@@ -55,12 +57,13 @@ fn main() {
     //let textB = "ab\nZde\nfg";
     //println!("{:?}", diff::chars(textA, textB));
     //*
+    /*
     let url = "https://news.ycombinator.com/item?id=12227922";
     //let url = "https://reddit.com";
     let url = hyper::Url::parse(url).unwrap();
     println!("Downloaded");
     let diff = compare(url);
     println!("{:?}", diff);
-    //*/
+    */
     
 }

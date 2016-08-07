@@ -18,8 +18,11 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
-mod ast;
-pub mod croncfg;
+//mod ast;
+//pub mod croncfg;
+mod parse;
+use parse::croncfg::*;
+use parse::ast;
 pub mod event;
 extern crate chrono;
 
