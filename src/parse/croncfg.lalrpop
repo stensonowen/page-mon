@@ -20,8 +20,7 @@
 
 //This is a LALRPOP filetype which defines an attribute grammar 
 // and which build.rs will compile into croncfg.rs.
-// :setf rust
-// vim: set syntax=rust:
+
 
 use std::str::FromStr;
 use super::ast;
@@ -208,3 +207,7 @@ Url = r#"https?://[^"\s]+"#;     //Option2
 //Would be ambiguous (c.f. Num) if url started with [\d] 
 //Easier to just require http/https before url
 
+
+//Tell vim and github that this is a rust file
+// `:setf rust` works manually, but vvv works automatically
+// vim: syntax=rust
