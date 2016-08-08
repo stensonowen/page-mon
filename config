@@ -27,7 +27,7 @@ url   = "https://api.pushjet.io/"
 #Urls must begin with `https://` (or `http://`)
 0 12 * * 1-5 https://itszn.com/blog/
 
-#Check if it's christmast at midnight every day of December
+#Check if it's christmast every midnight of December
 0 0 * DEC * https://isitchristmas.com/
 
 #keep track of the top of all time on your favorite subreddit 

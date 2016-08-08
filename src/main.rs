@@ -36,9 +36,25 @@ extern crate hyper;
 extern crate diff;
 
 pub mod parse;
-use parse::*;
+//use parse::*;
+use std::path::Path;
 
 fn main() {
+    let input_file = Path::new("/home/owen/shared/code/rust/page-mon/config");
+    let result = parse::parse(input_file);
+    if let Err(e) = result {
+        println!("Errors: ");
+        for i in e {
+            println!("\t{}", i);
+        }
+    } else {
+        println!("is_ok()");
+    }
+    //let (cmds, vars) = result.unwrap();
+    //println!("{} commands", cmds.len());
+    //println!("{} variables", vars.len());
+    //println!("\t{:?}", vars);
+    
     /*
     let (url, secret) = load_config().unwrap();
     let message = "this is a 'message test', with bells! and whistles?";

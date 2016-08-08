@@ -153,6 +153,7 @@ pub fn collect_vals(vals: &mut Vec<Value>, range: ops::Range<u8>) -> ValidSet {
             cal.insert(possibility);
         }
     }
+    assert!(cal.len() != 0);
     cal
 }
 
