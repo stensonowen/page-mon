@@ -59,6 +59,11 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,HashMap<&str,String>),Ve
                 continue
             }
         };
+        //skip if there's nothing on the line
+        //what is the better way to do this in the grammar?
+        if buffer.trim_right().len() == 0 {
+            continue
+        }
         //parse line
         let parsed = match croncfg::parse_Line(&buffer) {
             Ok(l)  => l,

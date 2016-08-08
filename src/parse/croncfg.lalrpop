@@ -53,12 +53,12 @@ pub Line: ast::Line = {
     <cmd:Command>   => ast::Line::Cmd(cmd),
     <v:Var>         => ast::Line::VarSet(v),
     Comment         => ast::Line::Comment,
-    Whitespace      => ast::Line::Comment, 
+    //Whitespace      => ast::Line::Comment, 
 };
 
 
 Comment = r"#.*";
-Whitespace = r"\s*";    //not sure why this doesn't work
+//Whitespace = r"\s*";    //not sure why this doesn't work
 
 pub Var: ast::Var = {
     //all strings must be enclosed in quotes
