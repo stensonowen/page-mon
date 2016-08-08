@@ -38,4 +38,4 @@ url   = "https://api.pushjet.io/"
 
 
 #Fix github syntax highlighting:
-# vim: syntax=conf
+# vim: syntax=python
