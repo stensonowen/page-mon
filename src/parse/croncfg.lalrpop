@@ -65,7 +65,7 @@ pub Var: ast::Var = {
     //example line: `Email = "stensonowen@gmail.com"`
     r"(?i)email"  "=" <v:Text>  => ast::Var::Email(   v.to_string()),
     r"(?i)secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
-    r"(?i)url"    "=" <v:Url>   => ast::Var::PjUrl(   v.to_string()),
+    r"(?i)url"    "=" r#"""# <v:Url> r#"""#  => ast::Var::PjUrl(   v.to_string()),
     r"(?i)dir"    "=" <v:Dir>   => ast::Var::DataDir( v.to_string()),
 };
 
@@ -203,7 +203,8 @@ Num: u8 = <n:r"[0-9]+"> => u8::from_str(n).unwrap();
 //      but `******https://google.com` is not
 //Url = r"[^0-9\s]+";               //Option1
 //Url = r"https?://.+[\d\w-\.]+";     //Option2
-Url = r"https?://[\S]+";     //Option2
+Url = r#"https?://[^"\s]+"#;     //Option2
+//Omit `"`, because it indicates end of address for variable `url`
 //Would be ambiguous (c.f. Num) if url started with [\d] 
 //Easier to just require http/https before url
 

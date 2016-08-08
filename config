@@ -1,0 +1,37 @@
+#This is a sample page-mon config file used to demonstrate features.
+#In the future, this will be the default file for the user to modify
+#Rather than this needing to be somewhere specific, eventually use `pagemon -e` 
+#For information regarding scheduling syntax, see http://linux.die.net/man/5/crontab
+    #Fields are MINUTE, HOUR, DAY_OF_MONTH, MONTH, DAY_OF_WEEK
+    #`*` means "every value", `1,2` means "1 or 2", `2-5` means "2, 3, 4, or 5"
+    #`*/2` means "every even value", `10-30/5` means "10, 15, 20, 25, or 30"
+    #If MONTH or DAY_OF_WEEK fields are a constant, their first three letters suffice
+        #e.g. `JAN` or `Sun` but not `Mon-Fri`; values are also case-insensitive
+
+#Set contact/storage variables
+#Variable names are case insensitive
+#`dir` is the only variable that is necessary
+dir   = "/home/owen/tmp/page-mon_log"
+#`email` and `secret` are only necessary if they're used
+Email = "stensonowen@gmail.com"
+SECRET="0123456789abcdef0123456789abcdef"
+#`url` is only necessary if `secret` is used with a self-hosted pushjet server
+url   = "https://api.pushjet.io/"
+
+
+#Check stallman.org every minute
+#Whitespace can be omitted where it does not cause ambiguity
+*****https://stallman.org/
+
+#Check blog at noon on every weekday
+#Urls must begin with `https://` (or `http://`)
+0 12 * * 1-5 https://itszn.com/blog/
+
+#Check if it's christmast at midnight every day of December
+0 0 * DEC * https://isitchristmas.com/
+
+#keep track of the top of all time on your favorite subreddit 
+#check every 5 minutes of every hour
+#check every Friday OR the 13th of every month
+*/5 * 13 * FRI https://www.reddit.com/r/ledootgeneration/top/?sort=top&t=all
+
