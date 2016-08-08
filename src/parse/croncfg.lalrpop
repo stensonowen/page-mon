@@ -51,9 +51,14 @@ grammar;
 
 pub Line: ast::Line = {
     <cmd:Command>   => ast::Line::Cmd(cmd),
-    <Comment>,
-    <Var>           => ast::Line::VarSet(<>),
+    <v:Var>         => ast::Line::VarSet(v),
+    Comment         => ast::Line::Comment,
+    Whitespace      => ast::Line::Comment, 
 };
+
+
+Comment = r"#.*";
+Whitespace = r"\s*";    //not sure why this doesn't work
 
 pub Var: ast::Var = {
     //all strings must be enclosed in quotes
@@ -111,10 +116,6 @@ Nickname: ast::Time = {
     r"(?i)@hourly"  => ast::Time::from(ZERO, STAR, STAR, STAR, STAR),
 };
 
-
-Comment: ast::Line = {
-    r"#.*" => ast::Line::Comment,
-};
 
 Entry_Day = {
     <Entry>,
