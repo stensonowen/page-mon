@@ -95,6 +95,7 @@ Action: ast::Action = {
 Contact: ast::Contact = {
     r"(?i)email"    => ast::Contact::Email,
     r"(?i)text"     => ast::Contact::Text,
+    r"(?i)append"   => ast::Contact::LogAll,
 };
 
 

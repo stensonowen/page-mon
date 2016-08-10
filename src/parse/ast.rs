@@ -65,6 +65,8 @@ pub struct Action {
 pub enum Contact {
     Email,
     Text,
+    LogLast,
+    LogAll,
 }
 
 //#[derive(Debug)]
