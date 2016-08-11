@@ -28,19 +28,22 @@ extern crate url;
 extern crate lettre;
 
 use std::env;
-use std::path::PathBuf;
-use std::fs::File;
 use std::error::Error;
+use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
+//web stuff
+use self::hyper::Url;
 use self::url::form_urlencoded::Serializer;
-use self::hyper::header::ContentType;
-//use self::hyper::header::{ContentType, Authorization, Basic};
-use self::lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
+use self::hyper::header::{ContentType, Authorization, Basic};
+//lettre stuff
 use self::lettre::email::EmailBuilder;
 use self::lettre::transport::EmailTransport;
+use self::lettre::transport::smtp::SmtpTransportBuilder;
 
 const CONFIG_FILE: &'static str = "pushjet.json";
-const DEFAULT_URL: &'static str = "https://api.pushjet.io";
+const DEFAULT_PJ_URL: &'static str = "https://api.pushjet.io";
+const PROGRAM_DESCIP: &'static str = "page-mon";
 
 fn find_file(name: &str) -> Option<PathBuf> {
     //check current directory for file
@@ -97,7 +100,7 @@ pub fn load_config() -> Result<(hyper::Url,String),String> {
     //`url` has a reasonable default 
     let address = match data["url"].as_str() {
         Some(u) => u,
-        None    => DEFAULT_URL,
+        None    => DEFAULT_PJ_URL,
     };
     //make sure url is valid
     let url = match hyper::Url::parse(address) {
@@ -136,15 +139,27 @@ pub fn generate_email(from: &str, to: &str, subject: &str,
     }
 }
 
-pub fn post_email(secret: String, url: hyper::Url, from: &str, to: &str, 
+pub fn post_email(api_key: String, domain: &str, to: &str, 
              subject: &str, text: &str) -> Result<String,String> {
     //send an email via a POST request and Mailgun
     //more consistent, but relies on an external service 
+    //  auth: "api:api_key"
+    //  url:  "api.mailgun.net/.../DOMAIN/..."
+    //  from: "page-mon <mailgun@DOMAIN 
+    
+    let url = format!("https://api.mailgun.net/v3/{}/messages", domain);
+    let url = match Url::parse(url.as_ref()) {
+        Ok(u)  => u,
+        Err(e) => return Err(format!("Url malformed: {}", e.description())),
+    };
+
+    let from = format!("{} <mailgun@{}>", PROGRAM_DESCIP, domain);
+
     let client = hyper::Client::new();
 
     //serialize data
     let payload: String = Serializer::new(String::new())
-                    .append_pair("from",   from)
+                    .append_pair("from",   from.as_ref())
                     .append_pair("to",     to)
                     .append_pair("subject",subject)
                     .append_pair("text",   text)
@@ -154,7 +169,7 @@ pub fn post_email(secret: String, url: hyper::Url, from: &str, to: &str,
     let auth = Authorization (
 		   Basic {
 			   username: "api".to_owned(),
-			   password: Some(secret),
+			   password: Some(api_key),
 		   });
 
     //set up and make request
