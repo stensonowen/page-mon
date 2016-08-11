@@ -58,4 +58,13 @@ In any case, I think I'm going to explore what Option (2) would look like. It se
 EDIT: For now, as a placeholder, I'm just going to do something like what [Minix/cron.c](http://www.cise.ufl.edu/~cop4600/cgi-bin/lxr/http/source.cgi/commands/simple/cron.c) does and check every minute for which events have to fire. How it ends up is anyone's guess, though.
 
 ### Contact
-I've been meaning to check out [Pushjet](http://docs.pushjet.io/) for a while, and now that I've taken the time to read through the docs I really like it. I intend for the primary method of contact to be via pushjet. It'll be trivial to actually send the message, but the user will have to set up their phone/service (it's not hard!). I've included a sample config file with the pushjet data [here](src/pushjet.json), but in the future it might go in the primary config file or something.
+I've been meaning to check out [Pushjet](http://docs.pushjet.io/) for a while, and now that I've taken the time to read through the docs I really like it. I intend for the primary method of contact to be via Pushjet. It'll be trivial to actually send the message, but the user will have to set up their phone/service (it's not hard!). I've included a sample config file with the Pushjet data [here](src/pushjet.json), but in the future it might go in the primary config file or something.
+
+Email is (surprisingly) a little trickier. I had initially intended for the project itself to send the email, for which [lettre](http://lettre.github.io/lettre/lettre/index.html) looks pretty handy.
+However, it seems likely that this will not work for a majority of users (myself included). I intend to run page-mon from a server at home or school, meaning it will either use a residential ISP or the school network. The latter bans communication on port 25, and the former probably runs a high risk of looking like spam (and might also ban communication on port 25). Email is an important thing to have, as Pushjet is essentially only accessible via an Android phone. It also uses Google Cloud Messaging, which many people might justifiably find unacceptable. Pushjet is therefore not always an option, and it would be nice to have a reliable alternative.
+
+There are a few email api alternatives. Mailgun is currently my top choice. It seems reliable, has a generous free plan, and is largely open source. (If you know of a service that offers a similar product that is more open, respects user privacy, and doesn't sacrifice reliability significantly, message me.) 
+
+I'll probably leave in some lettre functionality, as it might be nice to have on the off chance it will work.
+
+
