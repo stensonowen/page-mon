@@ -31,6 +31,10 @@ use self::hyper::header::*;
 use self::select::predicate::Name;
 //use self::select::document::Document;
 
+//TODO: pass String by mutable referenc to use as buffer, 
+// as in read_to_string(&mut s). This prevents copying the
+// whole string when it's returned, right?
+
 //use a descriptive user agent? or a generic one?
 const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
 //What qualifies as html that's too long for LCS, 
@@ -119,6 +123,9 @@ pub fn compare(url: hyper::Url) -> Result<String,String> {
     let old = match old {
         Ok(o)  => o,
         Err(e) => 
+            //TODO: move this to action/mod.rs; users might want to log all info,
+            // and that framework should not be here
+            // Might need to return a specific error type and not just Result<String>?
             //no `old` file to compare to; (try to) create one and throw an Err
             return match set_cache(&filename, &new) {
                 Ok(_)  => Err(format!("Cache absent ({}); new one made", 

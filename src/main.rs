@@ -38,18 +38,31 @@ extern crate diff;
 pub mod parse;
 //use parse::*;
 use std::path::Path;
+//use action::contact::email;
+use action::contact::post_email;
 
 fn main() {
-    let input_file = Path::new("/home/owen/shared/code/rust/page-mon/config");
-    let result = parse::parse(input_file);
-    if let Err(e) = result {
-        println!("Errors: ");
-        for i in e {
-            println!("\t{}", i);
-        }
-    } else {
-        println!("is_ok()");
-    }
+    let to = "stensonowen@gmail.com";
+    //let from = "qjkxkcd@gmail.com";
+    let subject = "subject_test";
+    let text = "body_test";
+    let domain = "sandbox3e30298db59a442a92874fb9736f52f5.mailgun.org";
+    let api = "key-ae0131f519acf1cc90c7bf380193c863".to_string();
+    let resp = post_email(api, domain, to, subject, text);
+    //let resp = email(from, to, subject, text);
+    println!("{:?}", resp);
+    
+    //let input_file = Path::new("/home/owen/shared/code/rust/page-mon/config");
+    //let result = parse::parse(input_file);
+    //if let Err(e) = result {
+    //    println!("Errors: ");
+    //    for i in e {
+    //        println!("\t{}", i);
+    //    }
+    //} else {
+    //    println!("is_ok()");
+    //}
+
     //let (cmds, vars) = result.unwrap();
     //println!("{} commands", cmds.len());
     //println!("{} variables", vars.len());

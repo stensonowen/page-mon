@@ -24,3 +24,12 @@
 
 //pub mod scrape;
 pub mod contact;
+use super::parse::ast;
+use std::collections::HashMap;
+
+
+pub fn act(delta: &str, method: ast::Contact, vars: &HashMap<&str,String>) -> Result<(),String> {
+
+
+    Ok(())
+}
