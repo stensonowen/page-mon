@@ -20,7 +20,8 @@
 //Stores the Iterable trait details on fields defined in ast.rs
 
 use std::{ops,cmp};
-use ast::*;
+//use ast::*;
+use super::super::parse::ast::*;
 
 pub type Range = ops::Range<u8>;
 

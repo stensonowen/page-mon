@@ -64,6 +64,7 @@ pub struct Action {
     pub contact:    Option<Contact>,
 }
 
+#[derive(PartialEq)]
 pub enum Contact {
     Email,
     Text,
