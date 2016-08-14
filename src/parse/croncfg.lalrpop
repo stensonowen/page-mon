@@ -62,10 +62,12 @@ Comment = r"#.*";
 pub Var: ast::Var = {
     //all strings must be enclosed in quotes
     //example line: `Email = "stensonowen@gmail.com"`
-    r"(?i)email"  "=" <v:Text>  => ast::Var::Email(   v.to_string()),
-    r"(?i)secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
-    r"(?i)url"    "=" r#"""# <v:Url> r#"""#  => ast::Var::PjUrl(   v.to_string()),
-    r"(?i)dir"    "=" <v:Dir>   => ast::Var::DataDir( v.to_string()),
+    r"(?i)email_domain" "=" <v:Text>    => ast::Var::EmailDomain(v.to_string()),
+    r"(?i)email_secret" "=" <v:Text>    => ast::Var::EmailSecret(v.to_string()),
+    r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
+    r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
+                                        => ast::Var::PjUrl(v.to_string()),
+    r"(?i)dir"    "=" <v:Dir>           => ast::Var::DataDir( v.to_string()),
 };
 
 //Text:

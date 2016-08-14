@@ -25,10 +25,18 @@
 pub mod scrape;
 pub mod contact;
 use super::parse::ast;
+use self::scrape::url_to_str;
 use std::collections::HashMap;
 
+extern crate hyper;
 
-pub fn act(delta: &str, method: ast::Contact, vars: &HashMap<&str,String>) -> Result<(),String> {
+
+pub fn act(delta: &str, url: hyper::Url, method: ast::Contact, 
+           vars: &HashMap<&str,String>) -> Result<(),String> {
+    //contact the user via `method` (email/pushjet)
+    //match method {
+    //    ast::Contact::Text => {
+    //        let secret = match vars.get("EMAIL
 
 
     Ok(())

@@ -32,10 +32,20 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::error::Error;
 
+#[derive(PartialEq, Hash, Eq)]
+pub enum Var {
+    EmailDomain,        //necessary for email
+    EmailSecret,        //necessary for email
+    PushjetUrl,         //optional  for pushjet
+    PushjetSecret,      //necessary for pushjet
+    Dir,                //necessary
+}
+
+pub type Vars = HashMap<Var,String>;
 
 
 //pub fn parse(input: String) {
-pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,HashMap<&str,String>),Vec<String>> {
+pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
     //all goes well, return a tuple of all commands and all variables
     //if there are parsing errors, return a vector of of them
     let file = match File::open(input) {
@@ -44,7 +54,7 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,HashMap<&str,String>),Ve
                                           e.description()).to_string()]),
     };
     //keep track of lines:
-    let mut variables = HashMap::<&str,String>::new();
+    let mut variables = Vars::new();
     let mut commands  = Vec::<ast::Command>::new();
     let mut errors    = Vec::<String>::new();
     //iterate through config by newline
@@ -78,10 +88,11 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,HashMap<&str,String>),Ve
             ast::Line::Cmd(cmd) => commands.push(cmd),
             ast::Line::VarSet(v)=> {
                 let pair = match v {
-                    ast::Var::Email(u)    => ("EMAIL",  u),
-                    ast::Var::PjSecret(u) => ("SECRET", u),
-                    ast::Var::PjUrl(u)    => ("URL",    u),
-                    ast::Var::DataDir(u)  => ("DIR",    u),
+                    ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
+                    ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
+                    ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
+                    ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
+                    ast::Var::DataDir(u)  => (Var::Dir, u),
                 };
                 variables.insert(pair.0, pair.1);
             },
