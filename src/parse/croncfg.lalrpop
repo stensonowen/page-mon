@@ -64,6 +64,7 @@ pub Var: ast::Var = {
     //example line: `Email = "stensonowen@gmail.com"`
     r"(?i)email_domain" "=" <v:Text>    => ast::Var::EmailDomain(v.to_string()),
     r"(?i)email_secret" "=" <v:Text>    => ast::Var::EmailSecret(v.to_string()),
+    r"(?i)email_to"     "=" <v:Text>    => ast::Var::EmailRecip(v.to_string()),
     r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
     r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
                                         => ast::Var::PjUrl(v.to_string()),

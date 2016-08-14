@@ -32,10 +32,13 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::error::Error;
 
+const DEFAULT_PJURL: &'static str = "https://api.pushjet.io";
+
 #[derive(PartialEq, Hash, Eq)]
 pub enum Var {
     EmailDomain,        //necessary for email
     EmailSecret,        //necessary for email
+    EmailRecip,         //necessary for email
     PushjetUrl,         //optional  for pushjet
     PushjetSecret,      //necessary for pushjet
     Dir,                //necessary
@@ -90,6 +93,7 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
                 let pair = match v {
                     ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
                     ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
+                    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
                     ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
                     ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
                     ast::Var::DataDir(u)  => (Var::Dir, u),
@@ -99,11 +103,32 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
             ast::Line::Comment  => (),
         };
     }
+    insert_default_variable_values(&mut variables);
+    if let Err(e) = verify(&variables) {
+        errors.push(e);
+    }
     //return errors or content
     if errors.is_empty() {
         Ok((commands, variables))
     } else {
         Err(errors)
+    }
+}
+
+
+fn insert_default_variable_values(vars: &mut Vars) {
+    //fill in default value(s?)
+    if vars.contains_key(&Var::PushjetUrl) == false {
+        vars.insert(Var::PushjetUrl, DEFAULT_PJURL.to_string());
+    }
+}
+
+fn verify(vars: &Vars) -> Result<(),String> {
+    if vars.contains_key(&Var::Dir) == false {
+        Err("No `DIR` variable set".to_string())
+    }
+    else {
+        Ok(())
     }
 }
 

@@ -43,6 +43,7 @@ pub enum Var {
     //Just stores data. Cannot assign multiples at the moment
     EmailDomain(String),
     EmailSecret(String),
+    EmailRecip(String),
     PjSecret(String),  //Pushjet Secret
     PjUrl(String),     //Pushjet Url
     DataDir(String),    //Directory of data storage
