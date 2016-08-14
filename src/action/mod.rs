@@ -22,7 +22,7 @@
  */
 
 
-//pub mod scrape;
+pub mod scrape;
 pub mod contact;
 use super::parse::ast;
 use std::collections::HashMap;

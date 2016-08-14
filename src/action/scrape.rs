@@ -29,11 +29,7 @@ use std::io::{Read, Write};
 
 use self::hyper::header::*;
 use self::select::predicate::Name;
-//use self::select::document::Document;
 
-//TODO: pass String by mutable referenc to use as buffer, 
-// as in read_to_string(&mut s). This prevents copying the
-// whole string when it's returned, right?
 
 //use a descriptive user agent? or a generic one?
 const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
@@ -41,27 +37,13 @@ const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebK
 //which should instead be compared tag-by-tag
 const DIFF_THRESHOLD: usize = 10_000;
 
-pub fn diff_text(old: &str, new: &str) -> String {
-    //even w/ dynamic programming, this doesn't scale great
-    //a 521kb String took >3 minutes w/ 100% cpu on 1 core
-    //takes about 1/2 a second for a 1.4k String,
-    // about as long as a 13-byte String
-    //let delta = diff::chars(&old, &new);
-    rhs_of_diff(&old, &new)
-    //let mut recent = String::new();
-    //for diff in delta {
-    //    if let diff::Result::Right(change) = diff {
-    //        recent.push('\n');
-    //        recent.push_str(change);
-    //    }
-    //}
-    //recent
-}
 
-pub fn rhs_of_diff(l: &str, r: &str) -> String {
-    //TODO: maybe include context?
-    let mut rhs = String::new();
+fn rhs_of_diff(l: &str, r: &str) -> String {
+    //`diff` `l` and `r`, and append all the unique parts of `r` 
+    // to `buffer`
+    //TODO: maybe include context? A dozen characters before/after?
     let differences = diff::chars(&l, &r);
+    let mut rhs = String::new();
     let mut continuous = true;
     for diff in differences {
         if let diff::Result::Right(change) = diff {
@@ -73,14 +55,16 @@ pub fn rhs_of_diff(l: &str, r: &str) -> String {
         }
     }
     rhs
-
 }
 
-pub fn decompose_and_diff(old: &str, new: &str) -> String {
+fn decompose_and_diff(old: &str, new: &str) -> String {
     //use html5ever to extract text, then only diff the content
     //shouldn't care about (certain) formatting or javascript
     //only use content tags like `p`, `hN`, ... ?
     //`title`, `p`, `h1..h6`, `div/span`?, `ol`, `ul`, `li`?
+    //This needs to append a lot, so it can't really use a buffer (right?)
+    // Most `read_to_string` calls like `to_vec` and modifies that
+    // Should I try to do something like that?
     let tags = vec![Name("title"), Name("h1"), 
                     Name("h2"), Name("h3"), Name("h4"), 
                     Name("h5"), Name("h6"), Name("p")];
@@ -91,19 +75,10 @@ pub fn decompose_and_diff(old: &str, new: &str) -> String {
         let old_elems = old_html.find(tag);
         let new_elems = new_html.find(tag);
         let elems = old_elems.iter().zip(new_elems.iter());
-        for (old_elem, new_elem) in elems {
-            let diff_elem = rhs_of_diff(&old_elem.text(),
-                                        &new_elem.text());
-            diff.push_str(&diff_elem);
+        for (old, new) in elems {
+            let diff_buf = rhs_of_diff(&old.text(), &new.text());
+            diff.push_str(&diff_buf);
             diff.push('\n');
-            //let deltas = diff::chars(&old_elem.text(), &new_elem.text());
-            //for delta in deltas {
-            //    if let diff::Result::Right(change) = delta { 
-            //        diff.push(change);
-            //    }
-            //}
-            ////only sometimes
-            //diff.push('\n');
         }
     }
     diff
@@ -112,49 +87,28 @@ pub fn decompose_and_diff(old: &str, new: &str) -> String {
 
 pub fn compare(url: hyper::Url) -> Result<String,String> {
     //`old` has been converted to bytes, is that a problem?
+    //TODO: verify old cache file exists before this
     let filename = url_to_str(&url);
-    let old = get_cache(&filename);
-    //try to download new content
-    let new = match get_url(url) {
-        Ok(n)  => n,
-        Err(e) => return Err(format!("Failed to fetch new page: {}", e)),
-    };
-    //try to look up cached content
-    let old = match old {
-        Ok(o)  => o,
-        Err(e) => 
-            //TODO: move this to action/mod.rs; users might want to log all info,
-            // and that framework should not be here
-            // Might need to return a specific error type and not just Result<String>?
-            //no `old` file to compare to; (try to) create one and throw an Err
-            return match set_cache(&filename, &new) {
-                Ok(_)  => Err(format!("Cache absent ({}); new one made", 
-                                      e.to_string())),
-                Err(f) => Err(format!("Cache absent ({});creation failed: {}", 
-                                      e, f).to_string()),
-            }
-    };
+    //create buffers for the `old` and `new` htmls, and attempt to load them
+    let mut old_txt = String::new();
+    if let Err(e) = get_cache(&filename, &mut old_txt) {
+        return Err(format!("Failed to open cache: {}", e))
+    }
+    let mut new_txt = String::new();
+    if let Err(e) = get_url(url, &mut new_txt) {
+        return Err(format!("Failed to fetch new page: {}", e))
+    }
 
     //decide which method to use to diff text
     //TODO: maybe recognize JSON and treat it differently?
-    println!("Using `decompose_and_diff`: {}", new.len() > DIFF_THRESHOLD);
-    let diff_fn = match new.len() > DIFF_THRESHOLD {
+    let diff_fn = match new_txt.len() > DIFF_THRESHOLD {
         true  => decompose_and_diff,
-        false => diff_text,
+        false => rhs_of_diff,
     };
-    let diff = diff_fn(&old, &new);
-    if diff.is_empty() {
-        Err("No change".to_string())
-    } else {
-        //new != old
-        match set_cache(&filename, &new) {
-            Ok(_)  => Ok(diff),
-            Err(e) => Err(format!("Page changed, but couldn't be cached: {}", 
-                                  e).to_string()),
-        }
-    }
+    Ok(diff_fn(&old_txt, &new_txt))
 }
 
+/*
 pub fn set_cache(filename: &str, contents: &str) -> Result<(),String> {
     //create or replace old file
     let mut file = match File::create(filename) {
@@ -168,6 +122,7 @@ pub fn set_cache(filename: &str, contents: &str) -> Result<(),String> {
                               e.description().to_string())),
     }
 }
+*/
 
 pub fn url_to_str(url: &hyper::Url) -> String {
     //try to make descriptive name out of url to use for file cache
@@ -193,7 +148,7 @@ pub fn url_to_str(url: &hyper::Url) -> String {
     url.as_str().replace("/", "_")
 }
 
-pub fn get_cache(filename: &str) -> Result<String,String> {
+fn get_cache(filename: &str, buffer: &mut String) -> Result<usize,String> {
     //open cached version of a page. Return the html or an error message
     //let filename = url_to_str(url);
     let mut file = match File::open(filename) {
@@ -202,16 +157,15 @@ pub fn get_cache(filename: &str) -> Result<String,String> {
                                      .to_string())),
         Ok(f)  => f,
     };
-    let mut text = String::new();
-    match file.read_to_string(&mut text) {
+    match file.read_to_string(buffer) {
         Err(e) => Err(format!("File open error: {}",
                               e.description() 
                               .to_string())),
-        Ok(_)  => Ok(text),
+        Ok(_)  => Ok(buffer.len()),
     }
 }
 
-pub fn get_url(url: hyper::Url) -> Result<String,String> {
+fn get_url(url: hyper::Url, buffer: &mut String) -> Result<usize,String> {
     //perform GET request on url. Return the html or an error message
     let client = hyper::Client::new();
     let mut headers = Headers::new();
@@ -229,11 +183,11 @@ pub fn get_url(url: hyper::Url) -> Result<String,String> {
         Err(e) => Err(format!("Request error: {}", 
                               e.description().to_string())),
         Ok(mut r)  => {
-            let mut text = String::new();
-            match r.read_to_string(&mut text) {
+            //let mut text = String::new();
+            match r.read_to_string(buffer) {
                 Err(e) => Err(format!("Read error: {}", 
                                       e.description().to_string())),
-                Ok(_)  => Ok(text),
+                Ok(_)  => Ok(buffer.len()),
             }
         }
     }
