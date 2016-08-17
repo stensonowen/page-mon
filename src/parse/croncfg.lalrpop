@@ -59,16 +59,24 @@ pub Line: ast::Line = {
 Comment = r"#.*";
 //Whitespace = r"\s*";    //not sure why this doesn't work
 
+//use ast::VarType;
 pub Var: ast::Var = {
     //all strings must be enclosed in quotes
     //example line: `Email = "stensonowen@gmail.com"`
-    r"(?i)email_domain" "=" <v:Text>    => ast::Var::EmailDomain(v.to_string()),
-    r"(?i)email_secret" "=" <v:Text>    => ast::Var::EmailSecret(v.to_string()),
-    r"(?i)email_to"     "=" <v:Text>    => ast::Var::EmailRecip(v.to_string()),
-    r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
+    //r"(?i)email_domain" "=" <v:Text>    => ast::Var::EmailDomain(v.to_string()),
+    //r"(?i)email_secret" "=" <v:Text>    => ast::Var::EmailSecret(v.to_string()),
+    //r"(?i)email_to"     "=" <v:Text>    => ast::Var::EmailRecip(v.to_string()),
+    //r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
+    //r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
+    //                                    => ast::Var::PjUrl(v.to_string()),
+    //r"(?i)dir"    "=" <v:Dir>           => ast::Var::DataDir( v.to_string()),
+    r"(?i)email_domain" "=" <v:Text> => ast::Var{lhs:ast::VarType::EmailDomain,rhs:v.to_string()},
+    r"(?i)email_secret" "=" <v:Text> => ast::Var{lhs:ast::VarType::EmailSecret,rhs:v.to_string()},
+    r"(?i)email_to"     "=" <v:Text> => ast::Var{lhs:ast::VarType::EmailRecip, rhs:v.to_string()},
+    r"(?i)pushjet_secret" "=" <v:Text> => ast::Var{lhs:ast::VarType::PjSecret, rhs:v.to_string()},
     r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
-                                        => ast::Var::PjUrl(v.to_string()),
-    r"(?i)dir"    "=" <v:Dir>           => ast::Var::DataDir( v.to_string()),
+                                        => ast::Var{ lhs:ast::VarType::PjUrl, rhs:v.to_string() },
+    r"(?i)dir"    "=" <v:Dir>           => ast::Var{ lhs:ast::VarType::Dir, rhs:v.to_string() },
 };
 
 //Text:

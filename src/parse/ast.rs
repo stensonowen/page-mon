@@ -39,14 +39,28 @@ pub enum Line {
     VarSet(Var),
 }
 
-pub enum Var {
-    //Just stores data. Cannot assign multiples at the moment
-    EmailDomain(String),
-    EmailSecret(String),
-    EmailRecip(String),
-    PjSecret(String),  //Pushjet Secret
-    PjUrl(String),     //Pushjet Url
-    DataDir(String),    //Directory of data storage
+//pub enum Var {
+//    //Just stores data. Cannot assign multiples at the moment
+//    EmailDomain(String),
+//    EmailSecret(String),
+//    EmailRecip(String),
+//    PjSecret(String),  //Pushjet Secret
+//    PjUrl(String),     //Pushjet Url
+//    DataDir(String),    //Directory of data storage
+//}
+pub struct Var {
+    pub lhs: VarType,
+    pub rhs: String,
+}
+
+#[derive(PartialEq, Hash, Eq)]
+pub enum VarType {
+    EmailDomain,
+    EmailSecret,
+    EmailRecip,
+    PjSecret,
+    PjUrl,
+    Dir,
 }
 
 

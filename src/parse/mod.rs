@@ -34,17 +34,19 @@ use std::error::Error;
 
 const DEFAULT_PJURL: &'static str = "https://api.pushjet.io";
 
-#[derive(PartialEq, Hash, Eq)]
-pub enum Var {
-    EmailDomain,        //necessary for email
-    EmailSecret,        //necessary for email
-    EmailRecip,         //nec for email
-    PushjetUrl,         //optional  for pushjet
-    PushjetSecret,      //necessary for pushjet
-    Dir,                //necessary
-}
+use self::ast::{Var,VarType};
 
-pub type Vars = HashMap<Var,String>;
+//#[derive(PartialEq, Hash, Eq)]
+//pub enum Var {
+//    EmailDomain,        //necessary for email
+//    EmailSecret,        //necessary for email
+//    EmailRecip,         //nec for email
+//    PushjetUrl,         //optional  for pushjet
+//    PushjetSecret,      //necessary for pushjet
+//    Dir,                //necessary
+//}
+
+pub type Vars = HashMap<VarType,String>;
 
 
 //pub fn parse(input: String) {
@@ -89,16 +91,18 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
         //organize result
         match parsed {
             ast::Line::Cmd(cmd) => commands.push(cmd),
-            ast::Line::VarSet(v)=> {
-                let pair = match v {
-                    ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
-                    ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
-                    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
-                    ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
-                    ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
-                    ast::Var::DataDir(u)  => (Var::Dir, u),
-                };
-                variables.insert(pair.0, pair.1);
+            ast::Line::VarSet(Var{lhs: l, rhs: r})=> {
+            //ast::Line::VarSet(v)=> {
+                //let pair = match v {
+                //    ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
+                //    ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
+                //    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
+                //    ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
+                //    ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
+                //    ast::Var::DataDir(u)  => (Var::Dir, u),
+                //};
+                //variables.insert(pair.0, pair.1);
+                variables.insert(l,r);
             },
             ast::Line::Comment  => (),
         };
@@ -118,13 +122,13 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
 
 fn insert_default_variable_values(vars: &mut Vars) {
     //fill in default value(s?)
-    if vars.contains_key(&Var::PushjetUrl) == false {
-        vars.insert(Var::PushjetUrl, DEFAULT_PJURL.to_string());
+    if vars.contains_key(&VarType::PjUrl) == false {
+        vars.insert(VarType::PjUrl, DEFAULT_PJURL.to_string());
     }
 }
 
 fn verify(vars: &Vars) -> Result<(),String> {
-    if vars.contains_key(&Var::Dir) == false {
+    if vars.contains_key(&VarType::Dir) == false {
         Err("No `DIR` variable set".to_string())
     }
     else {
@@ -132,3 +136,4 @@ fn verify(vars: &Vars) -> Result<(),String> {
     }
 }
 
+//TODO: amend

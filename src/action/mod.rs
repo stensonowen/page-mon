@@ -24,7 +24,10 @@
 
 pub mod scrape;
 pub mod contact;
-use super::parse::{Var, Vars};
+//use super::parse::{Var, Vars};
+use super::parse::Vars;
+use super::parse::ast::VarType;
+
 use super::parse::ast;
 use self::scrape::url_to_str;
 use std::collections::HashMap;
@@ -50,14 +53,14 @@ pub fn act(delta: &str, url: hyper::Url, method: ast::Contact,
     let subject = format!("Update from `{}` at `{}`", url_domain, now.to_string()); 
     match method {
         ast::Contact::Text => {
-            let secret = match vars.get(&Var::PushjetSecret) {
+            let secret = match vars.get(&VarType::PjSecret) {
                 Some(s) => s,
                 None    => return Err("No PushjetSecret value defined".to_string()),
             };
             //should definitely contain Url, because it was added in 
             // parse/mod.rs:insert_variable_default_values()
             //TODO: verify supplied url is valid & parsable
-            let pushjet_url = vars.get(&Var::PushjetUrl).unwrap();
+            let pushjet_url = vars.get(&VarType::PjUrl).unwrap();
             let pushjet_url = hyper::Url::parse(pushjet_url).unwrap();
             let page_url = url.as_str();
             let res = contact::pushjet(pushjet_url, secret, delta, 
@@ -67,15 +70,15 @@ pub fn act(delta: &str, url: hyper::Url, method: ast::Contact,
             }
         },
         ast::Contact::Email => {
-            let secret = match vars.get(&Var::EmailSecret) {
+            let secret = match vars.get(&VarType::EmailSecret) {
                 Some(s) => s,
                 None    => return Err("No EmailSecret value defined".to_string())
             };
-            let domain = match vars.get(&Var::EmailDomain) {
+            let domain = match vars.get(&VarType::EmailDomain) {
                 Some(d) => d,
                 None    => return Err("No EmailDomain value defined".to_string())
             };
-            let to = match vars.get(&Var::EmailRecip) {
+            let to = match vars.get(&VarType::EmailRecip) {
                 Some(t) => t,
                 None    => return Err("No EmailRecipient value defined".to_string()),
             };
