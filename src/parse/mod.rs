@@ -33,7 +33,10 @@ use std::io::{BufReader, BufRead};
 use std::error::Error;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
 const DEFAULT_PJURL: &'static str = "https://api.pushjet.io";
 
 >>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
@@ -97,7 +100,11 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
                     ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
                     ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
 <<<<<<< HEAD
+<<<<<<< HEAD
                     ast::Var::EmailRecip(u)  => (Var::EmailRecip, u),
+=======
+                    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
 =======
                     ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
 >>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
@@ -111,7 +118,10 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
         };
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
     insert_default_variable_values(&mut variables);
     if let Err(e) = verify(&variables) {
         errors.push(e);
