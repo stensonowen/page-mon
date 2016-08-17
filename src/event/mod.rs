@@ -50,12 +50,6 @@
  */
 
 
-pub mod value_itr;
-pub mod calendar;
+//pub mod value_itr;
+//pub mod calendar;
 //pub mod pushjet;
-
-
-//struct containing `event` info, i.e. an entire line in the config file
-struct Event {
-
-}

@@ -26,8 +26,12 @@ extern crate chrono;
 use self::chrono::{TimeZone, Local, Datelike, Timelike, DateTime};
 
 use event::value_itr::*;
+<<<<<<< HEAD
 //use super::super::parse::ast::{Time, Value};
 use super::job::{Time, Value};
+=======
+use ast::{Time, Value};
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
 
 #[allow(dead_code)]
 const MINUTE_RANGE: ops::Range<u8> = 0..60;

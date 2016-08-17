@@ -25,9 +25,74 @@
 
 mod event;
 mod action;
-mod parse;
+//pub mod croncfg;
+//pub mod ast;
 
+//use event::pushjet::{load_config, contact};
+//use action::pushjet::{load_config, contact};
+//use action::scrape::*;
+
+extern crate hyper;
+extern crate diff;
+
+pub mod parse;
+//use parse::*;
+use std::path::Path;
+//use action::contact::email;
+use action::contact::post_email;
 
 fn main() {
+    let to = "stensonowen@gmail.com";
+    //let from = "qjkxkcd@gmail.com";
+    let subject = "subject_test";
+    let text = "body_test";
+    let domain = "sandbox3e30298db59a442a92874fb9736f52f5.mailgun.org";
+    let api = "key-ae0131f519acf1cc90c7bf380193c863".to_string();
+    let resp = post_email(api, domain, to, subject, text);
+    //let resp = email(from, to, subject, text);
+    println!("{:?}", resp);
+    
+    //let input_file = Path::new("/home/owen/shared/code/rust/page-mon/config");
+    //let result = parse::parse(input_file);
+    //if let Err(e) = result {
+    //    println!("Errors: ");
+    //    for i in e {
+    //        println!("\t{}", i);
+    //    }
+    //} else {
+    //    println!("is_ok()");
+    //}
 
+    //let (cmds, vars) = result.unwrap();
+    //println!("{} commands", cmds.len());
+    //println!("{} variables", vars.len());
+    //println!("\t{:?}", vars);
+    
+    /*
+    let (url, secret) = load_config().unwrap();
+    let message = "this is a 'message test', with bells! and whistles?";
+    let level = 3u8;
+    let title = "title test";
+    let link = "https://teamfortress.tv";
+    
+    let res = contact(url, secret.as_str(), message, title, level, link);
+    println!("res: {:?}", res);
+    */
+    //let url = "https://en.wikipedia.org/wiki/Ancient_Rome";
+    //let url = "https://api.twitch.tv/kraken/channels/b4nny";
+    //let url = "http://icanhazip.com/";
+    
+    //let textA = "ab\ncde\nfg";
+    //let textB = "ab\nZde\nfg";
+    //println!("{:?}", diff::chars(textA, textB));
+    //*
+    /*
+    let url = "https://news.ycombinator.com/item?id=12227922";
+    //let url = "https://reddit.com";
+    let url = hyper::Url::parse(url).unwrap();
+    println!("Downloaded");
+    let diff = compare(url);
+    println!("{:?}", diff);
+    */
+    
 }

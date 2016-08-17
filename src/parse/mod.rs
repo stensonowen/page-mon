@@ -32,9 +32,6 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::error::Error;
 
-extern crate hyper;
-use self::hyper::Url;
-
 const DEFAULT_PJURL: &'static str = "https://api.pushjet.io";
 
 #[derive(PartialEq, Hash, Eq)]
@@ -94,22 +91,21 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
             ast::Line::Cmd(cmd) => commands.push(cmd),
             ast::Line::VarSet(v)=> {
                 let pair = match v {
-                    ast::Var::EmailDomain(u)=> (Var::EmailDomain, u),
-                    ast::Var::EmailSecret(u)=> (Var::EmailSecret, u),
+                    ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
+                    ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
                     ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
-                    ast::Var::PjSecret(u)   => (Var::PushjetSecret, u),
-                    ast::Var::PjUrl(u)      => (Var::PushjetUrl, u),
-                    ast::Var::DataDir(u)    => (Var::Dir, u),
+                    ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
+                    ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
+                    ast::Var::DataDir(u)  => (Var::Dir, u),
                 };
                 variables.insert(pair.0, pair.1);
             },
             ast::Line::Comment  => (),
         };
     }
-    if let Err(errs) = amend(&mut variables) {
-        for e in errs {
-            errors.push(e);
-        }
+    insert_default_variable_values(&mut variables);
+    if let Err(e) = verify(&variables) {
+        errors.push(e);
     }
     //return errors or content
     if errors.is_empty() {
@@ -120,27 +116,19 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
 }
 
 
-fn amend(vars: &mut Vars) -> Result<(),Vec<String>> {
-    //fix up Variables, making sure some entries are valid
-    //and supplying defaults where vars are omitted
-    let mut errors = Vec::<String>::new();
-    //make sure `Dir` is defined
-    if vars.contains_key(&Var::Dir) == false {
-        errors.push("No `DIR` variable set".to_string());
+fn insert_default_variable_values(vars: &mut Vars) {
+    //fill in default value(s?)
+    if vars.contains_key(&Var::PushjetUrl) == false {
+        vars.insert(Var::PushjetUrl, DEFAULT_PJURL.to_string());
     }
-    //insert DEFAULT_PJURL if its entry is absent
-    //if url is present, make sure it's valid
-    if let Some(url) = vars.get(&Var::PushjetUrl) {
-        if let Err(e) = Url::parse(url) {
-            errors.push(format!("Error parsing url: {}", e));
-        }
-    } 
-    vars.entry(Var::PushjetUrl).or_insert(DEFAULT_PJURL.to_string());
+}
 
-    if errors.is_empty() {
+fn verify(vars: &Vars) -> Result<(),String> {
+    if vars.contains_key(&Var::Dir) == false {
+        Err("No `DIR` variable set".to_string())
+    }
+    else {
         Ok(())
-    } else {
-        Err(errors)
     }
 }
 

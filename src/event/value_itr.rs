@@ -20,10 +20,14 @@
 //Stores the Iterable trait details on fields defined in ast.rs
 
 use std::{ops,cmp};
+<<<<<<< HEAD
 //use ast::*;
 //use super::super::parse::ast::*;
 //use super::super::parse::ast::{Value, ContVal};
 use super::job::{Value, ContVal};
+=======
+use ast::*;
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
 
 pub type Range = ops::Range<u8>;
 
