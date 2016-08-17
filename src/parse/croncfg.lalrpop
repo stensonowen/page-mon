@@ -23,8 +23,7 @@
 
 
 use std::str::FromStr;
-//use super::job;
-use super::super::job;
+use super::ast;
 
 grammar;
 
@@ -49,27 +48,27 @@ grammar;
 //
 // TODO: add parsing for environment setting? (e.g. mailto)
 
-pub Line: job::Line = {
-    <cmd:Command>   => job::Line::Cmd(cmd),
-    <v:Var>         => job::Line::VarSet(v),
-    Comment         => job::Line::Comment,
-    //Whitespace      => job::Line::Comment, 
+pub Line: ast::Line = {
+    <cmd:Command>   => ast::Line::Cmd(cmd),
+    <v:Var>         => ast::Line::VarSet(v),
+    Comment         => ast::Line::Comment,
+    //Whitespace      => ast::Line::Comment, 
 };
 
 
 Comment = r"#.*";
 //Whitespace = r"\s*";    //not sure why this doesn't work
 
-pub Var: job::Var = {
+pub Var: ast::Var = {
     //all strings must be enclosed in quotes
     //example line: `Email = "stensonowen@gmail.com"`
-    r"(?i)email_domain" "=" <v:Text>    => job::Var::EmailDomain(v.to_string()),
-    r"(?i)email_secret" "=" <v:Text>    => job::Var::EmailSecret(v.to_string()),
-    r"(?i)email_to"     "=" <v:Text>    => job::Var::EmailRecip(v.to_string()),
-    r"(?i)pushjet_secret" "=" <v:Text>  => job::Var::PjSecret(v.to_string()),
+    r"(?i)email_domain" "=" <v:Text>    => ast::Var::EmailDomain(v.to_string()),
+    r"(?i)email_secret" "=" <v:Text>    => ast::Var::EmailSecret(v.to_string()),
+    r"(?i)email_to"     "=" <v:Text>    => ast::Var::EmailRecip(v.to_string()),
+    r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
     r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
-                                        => job::Var::PjUrl(v.to_string()),
-    r"(?i)dir"    "=" <v:Dir>           => job::Var::DataDir( v.to_string()),
+                                        => ast::Var::PjUrl(v.to_string()),
+    r"(?i)dir"    "=" <v:Dir>           => ast::Var::DataDir( v.to_string()),
 };
 
 //Text:
@@ -85,50 +84,50 @@ Text = r#""[\w@\.]+""#;
 Dir = r#""/.*""#;
 
 
-pub Command: job::Command = {
-    <t:Time> <a:Action>	=> job::Command { time:t, act:a },
+pub Command: ast::Command = {
+    <t:Time> <a:Action>	=> ast::Command { time:t, act:a },
 };
 
 
-Action: job::Action = {
-    <u:Url>                     => job::Action { url:u.to_owned(), contact:None },
-    <u:Url> "->" <c:Contact>    => job::Action { url:u.to_owned(), contact:Some(c) },
+Action: ast::Action = {
+    <u:Url>                     => ast::Action { url:u.to_owned(), contact:None },
+    <u:Url> "->" <c:Contact>    => ast::Action { url:u.to_owned(), contact:Some(c) },
 };
 
 
-Contact: job::Contact = {
-    r"(?i)email"    => job::Contact::Email,
-    r"(?i)text"     => job::Contact::Text,
-    r"(?i)append"   => job::Contact::LogAll,
+Contact: ast::Contact = {
+    r"(?i)email"    => ast::Contact::Email,
+    r"(?i)text"     => ast::Contact::Text,
+    r"(?i)append"   => ast::Contact::LogAll,
 };
 
 
-Time: job::Time = {
+Time: ast::Time = {
     <a:Entry> <b:Entry> <c:Entry> <d:Entry_Month> <e:Entry_Day> => 
-        job::Time { minute:a, hour:b, date:c, month:d, weekday:e },
+        ast::Time { minute:a, hour:b, date:c, month:d, weekday:e },
     <Nickname>,
 };
     
 
-use super::job::{ZERO, ONE, STAR};
-Nickname: job::Time = {
-    r"(?i)@yearly"  => job::Time::from(ZERO, ZERO, ONE , ONE , STAR),
-    r"(?i)@annually"=> job::Time::from(ZERO, ZERO, ONE , ONE , STAR),
-    r"(?i)@monthly" => job::Time::from(ZERO, ZERO, ONE , STAR, STAR),
-    r"(?i)@weekly"  => job::Time::from(ZERO, ZERO, STAR, STAR, ZERO),
-    r"(?i)@daily"   => job::Time::from(ZERO, ZERO, STAR, STAR, STAR),
-    r"(?i)@hourly"  => job::Time::from(ZERO, STAR, STAR, STAR, STAR),
+use super::ast::{ZERO, ONE, STAR};
+Nickname: ast::Time = {
+    r"(?i)@yearly"  => ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
+    r"(?i)@annually"=> ast::Time::from(ZERO, ZERO, ONE , ONE , STAR),
+    r"(?i)@monthly" => ast::Time::from(ZERO, ZERO, ONE , STAR, STAR),
+    r"(?i)@weekly"  => ast::Time::from(ZERO, ZERO, STAR, STAR, ZERO),
+    r"(?i)@daily"   => ast::Time::from(ZERO, ZERO, STAR, STAR, STAR),
+    r"(?i)@hourly"  => ast::Time::from(ZERO, STAR, STAR, STAR, STAR),
 };
 
 
 Entry_Day = {
     <Entry>,
-    <d:DayOfWeek> => vec![job::Value::Constant(d)],
+    <d:DayOfWeek> => vec![ast::Value::Constant(d)],
 };
 
 Entry_Month = {
     <Entry>,
-    <m:MonthOfYear> => vec![job::Value::Constant(m)],
+    <m:MonthOfYear> => vec![ast::Value::Constant(m)],
 };
 
 Entry = Comma<Value>; 
@@ -141,18 +140,18 @@ Comma<Value>: Vec<Value> = {
     }
 };
 
-Value: job::Value = {
-    <n:Num>                 => job::Value::Constant(n),
-    <cv:ContVal>            => job::Value::CV(cv),
-    <cv:ContVal> <s:Skip>   => job::Value::Skip(cv, s),
+Value: ast::Value = {
+    <n:Num>                 => ast::Value::Constant(n),
+    <cv:ContVal>            => ast::Value::CV(cv),
+    <cv:ContVal> <s:Skip>   => ast::Value::Skip(cv, s),
 };
 
 Skip = "/" <Num>;
 
-ContVal: job::ContVal = {   
+ContVal: ast::ContVal = {   
     // "Continuous Values", i.e. not a skip or constant
-    "*"                 => job::ContVal::Asterisk,
-    <n:Num> "-" <m:Num> => job::ContVal::Range(n,m+1),    
+    "*"                 => ast::ContVal::Asterisk,
+    <n:Num> "-" <m:Num> => ast::ContVal::Range(n,m+1),    
     //Range Asymmetry: the cron man page defines ranges
     // to be inclusive, but Rust ranges omit the second 
     // value, e.g. 0..42 includes 0 but not 42.

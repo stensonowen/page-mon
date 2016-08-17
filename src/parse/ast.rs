@@ -30,10 +30,7 @@
 //TODO: don't forget that 0 = 7 = Sunday
 
 use std::fmt::{Debug, Formatter, Error};
-use super::super::job::*;
-use super::job::*;
 
-/*
 
 pub enum Line {
     //separated by newlines
@@ -146,4 +143,3 @@ impl Debug for Line {
         }
     }
 }
-*/
