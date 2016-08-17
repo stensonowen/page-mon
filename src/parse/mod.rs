@@ -93,7 +93,7 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
                 let pair = match v {
                     ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
                     ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
-                    ast::Var::EmailRecip(u)  => (Var::EmailRecip, u),
+                    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
                     ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
                     ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
                     ast::Var::DataDir(u)  => (Var::Dir, u),
