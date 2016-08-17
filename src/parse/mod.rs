@@ -32,6 +32,11 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::error::Error;
 
+<<<<<<< HEAD
+=======
+const DEFAULT_PJURL: &'static str = "https://api.pushjet.io";
+
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
 #[derive(PartialEq, Hash, Eq)]
 pub enum Var {
     EmailDomain,        //necessary for email
@@ -91,7 +96,11 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
                 let pair = match v {
                     ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
                     ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
+<<<<<<< HEAD
                     ast::Var::EmailRecip(u)  => (Var::EmailRecip, u),
+=======
+                    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
                     ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
                     ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
                     ast::Var::DataDir(u)  => (Var::Dir, u),
@@ -101,6 +110,13 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
             ast::Line::Comment  => (),
         };
     }
+<<<<<<< HEAD
+=======
+    insert_default_variable_values(&mut variables);
+    if let Err(e) = verify(&variables) {
+        errors.push(e);
+    }
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
     //return errors or content
     if errors.is_empty() {
         Ok((commands, variables))
@@ -109,3 +125,23 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
     }
 }
 
+<<<<<<< HEAD
+=======
+
+fn insert_default_variable_values(vars: &mut Vars) {
+    //fill in default value(s?)
+    if vars.contains_key(&Var::PushjetUrl) == false {
+        vars.insert(Var::PushjetUrl, DEFAULT_PJURL.to_string());
+    }
+}
+
+fn verify(vars: &Vars) -> Result<(),String> {
+    if vars.contains_key(&Var::Dir) == false {
+        Err("No `DIR` variable set".to_string())
+    }
+    else {
+        Ok(())
+    }
+}
+
+>>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
