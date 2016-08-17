@@ -33,6 +33,7 @@ extern crate hyper;
 extern crate chrono;
 use self::chrono::{DateTime, Local};
 
+const PUSHJET_PRIORITY: u8 = 3;
 
 enum LogType {
     Append,
@@ -91,27 +92,9 @@ pub fn act(delta: &str, url: hyper::Url, method: ast::Contact,
 
     Ok(())
 }
-<<<<<<< HEAD
-//pub fn act(delta: &str, url: hyper::Url, method: ast::Contact, 
-//           vars: &HashMap<&str,String>) -> Result<(),String> {
-//    //contact the user via `method` (email/pushjet)
-//    //match method {
-//    //    ast::Contact::Text => {
-//    //        let secret = match vars.get("EMAIL
-//
-//
-//    Ok(())
-//}
-=======
-
-enum LogType {
-    Create,
-    Append,
-}
 
 fn log(url: &hyper::Url, log_type: LogType) -> Result<(),String> {
     //replace or append
     Ok(())
 
 }
->>>>>>> parent of a37a8d7... So now everything compiles. But reorganizing might be in order
