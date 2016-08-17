@@ -30,7 +30,10 @@
 //TODO: don't forget that 0 = 7 = Sunday
 
 use std::fmt::{Debug, Formatter, Error};
+use super::super::job::*;
+use super::job::*;
 
+/*
 
 pub enum Line {
     //separated by newlines
@@ -109,7 +112,7 @@ pub enum Value {
 
 #[derive(Debug, PartialEq)]
 pub enum ContVal {
-    //Values are contiguous, e.g. 1-5 or * but not */2 or 4
+    //Values are contiguous, e.g. 1-5 or * but not * / 2 or 4
     Asterisk,
     Range(u8,u8),
 }
@@ -144,3 +147,4 @@ impl Debug for Line {
         }
     }
 }
+*/

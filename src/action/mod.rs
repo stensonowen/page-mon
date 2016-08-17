@@ -24,7 +24,8 @@
 
 pub mod scrape;
 pub mod contact;
-use super::parse::ast;
+//use super::parse::job;
+use super::job;
 use super::parse::{Var, Vars};
 use self::scrape::url_to_str;
 use std::collections::HashMap;
@@ -40,7 +41,7 @@ use self::chrono::{Local, DateTime};
 const PUSHJET_PRIORITY: u8 = 3;   //1-5
 
 
-pub fn act(delta: &str, url: hyper::Url, method: ast::Contact, 
+pub fn act(delta: &str, url: hyper::Url, method: job::Contact, 
            vars: &Vars, now: &DateTime<Local>) -> Result<(),String> {
     //contact the user via `method` (email/pushjet)
     let url_domain = match url.domain() {
@@ -48,7 +49,7 @@ pub fn act(delta: &str, url: hyper::Url, method: ast::Contact,
         None => url.as_str(),
     };
     let subject = format!("Update from `{}` at `{}`", url_domain, now.to_string()); 
-    if method == ast::Contact::Text {
+    if method == job::Contact::Text {
         let secret = match vars.get(&Var::PushjetSecret) {
             Some(s) => s,
             None    => return Err("No PushjetSecret value defined".to_string()),
@@ -64,7 +65,7 @@ pub fn act(delta: &str, url: hyper::Url, method: ast::Contact,
         if let Err(e) = res {
             return Err(format!("Failed to contact via pushjet: {}", e))
         }
-    } else if method == ast::Contact::Email {
+    } else if method == job::Contact::Email {
         let secret = match vars.get(&Var::EmailSecret) {
             Some(s) => s,
             None    => return Err("No EmailSecret value defined".to_string())
@@ -86,7 +87,7 @@ pub fn act(delta: &str, url: hyper::Url, method: ast::Contact,
     //log data independent of method of contact
     let dir = vars.get(&Var::Dir).unwrap();
     let log_type = match method {
-        ast::Contact::LogAll => LogType::Append,
+        job::Contact::LogAll => LogType::Append,
         _                    => LogType::Create,
     };
     let res = log(&url, dir, log_type, delta);

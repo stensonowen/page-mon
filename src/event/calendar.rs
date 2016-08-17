@@ -26,7 +26,8 @@ extern crate chrono;
 use self::chrono::{TimeZone, Local, Datelike, Timelike, DateTime};
 
 use event::value_itr::*;
-use super::super::parse::ast::{Time, Value};
+//use super::super::parse::ast::{Time, Value};
+use super::job::{Time, Value};
 
 #[allow(dead_code)]
 const MINUTE_RANGE: ops::Range<u8> = 0..60;

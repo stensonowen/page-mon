@@ -21,7 +21,9 @@
 
 use std::{ops,cmp};
 //use ast::*;
-use super::super::parse::ast::*;
+//use super::super::parse::ast::*;
+//use super::super::parse::ast::{Value, ContVal};
+use super::job::{Value, ContVal};
 
 pub type Range = ops::Range<u8>;
 
