@@ -98,8 +98,8 @@ pub Command: ast::Command = {
 
 
 Action: ast::Action = {
-    <u:Url>                     => ast::Action { url:u.to_owned(), contact:None },
-    <u:Url> "->" <c:Contact>    => ast::Action { url:u.to_owned(), contact:Some(c) },
+    <u:Url>                     => ast::Action { url:u.to_owned(), contact:ast::Contact::LogLast },
+    <u:Url> "->" <c:Contact>    => ast::Action { url:u.to_owned(), contact:c },
 };
 
 

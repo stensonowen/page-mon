@@ -28,6 +28,9 @@
 //generic typedefs are a no-no. I'll leave it alone for now.
 
 //TODO: don't forget that 0 = 7 = Sunday
+//TODO: consider moving `ast.rs` somewhere closer to the src root
+//  many other files depend on it and it would be nice to not have
+//  `super::super::parse::ast::...` everywhere
 
 use std::fmt::{Debug, Formatter, Error};
 
@@ -75,7 +78,7 @@ pub struct Command {
 //#[derive(Debug)]
 pub struct Action {
     pub url:        String,
-    pub contact:    Option<Contact>,
+    pub contact:    Contact,
 }
 
 pub enum Contact {
