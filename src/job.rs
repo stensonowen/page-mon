@@ -25,28 +25,82 @@
  */
 
 
-use parse::ast::Contact;
-use event::calendar::ValidSet;
+use parse::ast;//::Contact;
+use parse;
+//use event::calendar::ValidSet;
+use event::calendar;//::Calendar;
+//use parse::Vars;
 
 extern crate hyper;
 
-struct Time {
-    //store time as a collection of valid options
-    //more efficient to store in HashSet (or BTreeSet or whatever)
-    // than iterating through an arbitrarily complex definition every 
-    // iteration (which might be every minute).
-    //Better to use a little bit more memory that at least has an upper bound
-    // rather than committing an arbitrary amount of cpu power every minute
-    minute: ValidSet,
-    hour:   ValidSet,
-    date:   ValidSet,
-    month:  ValidSet,
-    weekday:ValidSet,
+enum Contact {
+    //New form of `ast::Contact` that includes the values it depends on
+    //Makes it harder for a un-definition to slip through the cracks
+    //TODO: use string slices instead?? it would reduce repetition
+    Email {
+        domain: String,
+        secret: String,
+        recip:  String,
+    },
+    Pushjet {
+        secret: String,
+        url:    hyper::Url,
+    },
+    LogLast,
+    LogAll,
 }
 
-struct Job {
-    time:   Time,
+fn extract<'a>(target: ast::VarType, vars: &'a parse::Vars) -> Result<&'a str,String> {
+    //shorthand for extracting a var from Vars with a string error message
+    match vars.get(&target) {
+        Some(v) => Ok(v),
+        None => Err(format!("Necessary variable not defined: {:?}", target)),
+    }
+}
+
+
+impl Contact {
+    pub fn extrapolate(base: ast::Contact, vars: &parse::Vars) -> Result<Self,String> {
+        //converts the basic information from ast::Contact into a fuller version
+        // by extracting the relevant variables from `vars`
+        match base {
+            ast::Contact::LogAll  => Ok(Contact::LogAll),
+            ast::Contact::LogLast => Ok(Contact::LogLast),
+            ast::Contact::Text    => {
+                let secret = try!(extract(ast::VarType::PjSecret, vars));
+                let urlstr = try!(extract(ast::VarType::PjUrl, vars));
+                let url = match hyper::Url::parse(urlstr) {
+                    Ok(u)  => u,
+                    Err(e) => return Err(format!("Failed to parse PjUrl into url: {:?}", e)),
+                };
+                Ok(Contact::Pushjet { secret: secret.to_string(), url: url})
+            },
+            ast::Contact::Email    => {
+                let domain = try!(extract(ast::VarType::EmailDomain, vars));
+                let secret = try!(extract(ast::VarType::EmailSecret, vars));
+                let recip  = try!(extract(ast::VarType::EmailRecip,  vars));
+                //Ok(Contact::Email { domain: domain, secret: secret, recip: recip})
+                Ok(Contact::Email { domain: domain.to_string(), 
+                                    secret: secret.to_string(), 
+                                    recip:   recip.to_string()})
+            },
+        }
+    }
+}
+
+pub struct Job {
+    time:   calendar::Calendar,
     url:    hyper::Url,
-    via:    Contact,
+    via:    ast::Contact,
+}
+//TODO: should `job` store just `Contact` type and assume all data 
+// are supplied in variable 
+
+
+impl Job {
+    pub fn from(cmd: &ast::Command, vars: &parse::Vars) -> Result<Self,String> {
+        Err(String::new())
+    }
+
 }
 

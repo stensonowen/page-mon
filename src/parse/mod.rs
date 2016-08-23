@@ -92,16 +92,6 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
         match parsed {
             ast::Line::Cmd(cmd) => commands.push(cmd),
             ast::Line::VarSet(Var{lhs: l, rhs: r})=> {
-            //ast::Line::VarSet(v)=> {
-                //let pair = match v {
-                //    ast::Var::EmailDomain(u) => (Var::EmailDomain, u),
-                //    ast::Var::EmailSecret(u) => (Var::EmailSecret, u),
-                //    ast::Var::EmailRecip(u) => (Var::EmailRecip, u),
-                //    ast::Var::PjSecret(u) => (Var::PushjetSecret, u),
-                //    ast::Var::PjUrl(u)    => (Var::PushjetUrl, u),
-                //    ast::Var::DataDir(u)  => (Var::Dir, u),
-                //};
-                //variables.insert(pair.0, pair.1);
                 variables.insert(l,r);
             },
             ast::Line::Comment  => (),

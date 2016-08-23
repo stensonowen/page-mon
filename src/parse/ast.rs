@@ -56,7 +56,7 @@ pub struct Var {
     pub rhs: String,
 }
 
-#[derive(PartialEq, Hash, Eq)]
+#[derive(PartialEq, Hash, Eq, Debug)]
 pub enum VarType {
     EmailDomain,
     EmailSecret,

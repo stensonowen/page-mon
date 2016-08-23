@@ -77,6 +77,7 @@ impl Calendar {
         }
     }
 
+    /*
     pub fn get_month(&self, year: i32, month: u8) -> ValidSet {
         //TODO: unit tests
         let mut month_set = self.mon.clone();
@@ -103,7 +104,7 @@ impl Calendar {
             }
         }
         month_set
-    }
+    }*/
 
     pub fn fire_now(&self, now: DateTime<Local>) -> bool {
         //datetimes are a little more pleasant to work with
