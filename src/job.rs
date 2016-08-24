@@ -50,7 +50,7 @@ enum Contact {
     LogAll,
 }
 
-fn extract<'a>(target: ast::VarType, vars: &'a parse::Vars) -> Result<&'a str,String> {
+fn extract<'a>(target: ast::VarType, vars: &'a parse::Vars) -> Result<&'a str,String>{
     //shorthand for extracting a var from Vars with a string error message
     match vars.get(&target) {
         Some(v) => Ok(v),
@@ -60,7 +60,7 @@ fn extract<'a>(target: ast::VarType, vars: &'a parse::Vars) -> Result<&'a str,St
 
 
 impl Contact {
-    pub fn extrapolate(base: ast::Contact, vars: &parse::Vars) -> Result<Self,String> {
+    pub fn extrapolate(base: ast::Contact, vars: &parse::Vars) -> Result<Self,String>{
         //converts the basic information from ast::Contact into a fuller version
         // by extracting the relevant variables from `vars`
         match base {
@@ -71,7 +71,8 @@ impl Contact {
                 let urlstr = try!(extract(ast::VarType::PjUrl, vars));
                 let url = match hyper::Url::parse(urlstr) {
                     Ok(u)  => u,
-                    Err(e) => return Err(format!("Failed to parse PjUrl into url: {:?}", e)),
+                    Err(e) => return Err(format!("Failed to parse PjUrl into url: 
+                                                 {:?}", e)),
                 };
                 Ok(Contact::Pushjet { secret: secret.to_string(), url: url})
             },
@@ -86,21 +87,32 @@ impl Contact {
             },
         }
     }
+    pub fn contact(delta: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+        //contact using whatever method
+        
+    }
 }
 
 pub struct Job {
     time:   calendar::Calendar,
     url:    hyper::Url,
-    via:    ast::Contact,
+    via:    Contact,    //the one above, NOT the one in ast.rs
 }
 //TODO: should `job` store just `Contact` type and assume all data 
-// are supplied in variable 
+// are supplied in variable? 
 
 
 impl Job {
-    pub fn from(cmd: &ast::Command, vars: &parse::Vars) -> Result<Self,String> {
-        Err(String::new())
+    pub fn from(cmd: ast::Command, vars: &parse::Vars) -> Result<Self,String> {
+        let mut time = cmd.time;
+        let cal = calendar::Calendar::from_time(&mut time);
+        let url = match hyper::Url::parse(&cmd.act.url) {
+            Ok(u)  => u,
+            Err(e) => return Err(format!("Failed to parse job url ({}) into url: {:?}"
+                                         , cmd.act.url, e))
+        };
+        let contact = try!(Contact::extrapolate(cmd.act.contact, vars));
+        Ok(Job { time: cal, url: url, via: contact })
     }
-
 }
 
