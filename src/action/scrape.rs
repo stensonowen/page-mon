@@ -85,13 +85,13 @@ fn decompose_and_diff(old: &str, new: &str) -> String {
 }
 
 
-pub fn compare(url: hyper::Url) -> Result<String,String> {
+pub fn compare(url: hyper::Url, path: &str) -> Result<String,String> {
     //`old` has been converted to bytes, is that a problem?
     //TODO: verify old cache file exists before this
-    let filename = url_to_str(&url);
+    //let filename = url_to_str(&url);
     //create buffers for the `old` and `new` htmls, and attempt to load them
     let mut old_txt = String::new();
-    if let Err(e) = get_cache(&filename, &mut old_txt) {
+    if let Err(e) = get_cache(path, &mut old_txt) {
         return Err(format!("Failed to open cache: {}", e))
     }
     let mut new_txt = String::new();
@@ -123,30 +123,6 @@ pub fn set_cache(filename: &str, contents: &str) -> Result<(),String> {
     }
 }
 */
-
-pub fn url_to_str(url: &hyper::Url) -> String {
-    //try to make descriptive name out of url to use for file cache
-    //can't just use the domain, because there could be collisions
-    //if we can't, just use the url itself (without the forward slashes)
-    //TODO: use domain in fromt of path segments
-    //TODO: make sure title is at least like 1 or 2 parts long
-    //TODO: add `directory` part to config grammar?
-    //TODO: collisions are still not uncommon. Maybe use base64 of a 
-    // hash of the url and Time object?
-    let split = url.path_segments();
-    if let Some(s) = split {
-        if let Some(d) = url.domain() {
-            let parts: Vec<&str> = s.into_iter().collect();
-            let mut sum = d.to_owned();
-            sum.push_str(&parts.join("_"));
-            if parts.len() > 1 {
-                return sum;
-            }
-        }
-    } 
-    //"/" and \0 are the only invalid characters in a filename
-    url.as_str().replace("/", "_")
-}
 
 fn get_cache(filename: &str, buffer: &mut String) -> Result<usize,String> {
     //open cached version of a page. Return the html or an error message

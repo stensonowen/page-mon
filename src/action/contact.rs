@@ -139,7 +139,7 @@ pub fn generate_email(from: &str, to: &str, subject: &str,
     }
 }
 
-pub fn post_email(api_key: String, domain: &str, to: &str, 
+pub fn post_email(api_key: &str, domain: &str, to: &str, 
              subject: &str, text: &str) -> Result<String,String> {
     //send an email via a POST request and Mailgun
     //more consistent, but relies on an external service 
@@ -169,7 +169,7 @@ pub fn post_email(api_key: String, domain: &str, to: &str,
     let auth = Authorization (
 		   Basic {
 			   username: "api".to_owned(),
-			   password: Some(api_key),
+			   password: Some(api_key.to_owned()),
 		   });
 
     //set up and make request
