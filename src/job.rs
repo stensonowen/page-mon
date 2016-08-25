@@ -34,6 +34,10 @@ use event::calendar;//::Calendar;
 use action;
 
 extern crate hyper;
+extern crate chrono;
+use self::chrono::{DateTime,Local};
+
+use std::path::{Path,PathBuf};
 
 
 pub struct Job {
@@ -57,6 +61,46 @@ impl Job {
         };
         let contact = try!(action::Action::extrapolate(cmd.act.contact, vars));
         Ok(Job { time: cal, url: url, via: contact })
+    }
+    pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+        //Do this in a different order so at most one Error is returned
+        // 1. get page contents
+        // 2. open cache contents
+        // 3. diff them
+        // 4. contact the user
+        // 5. update the cache
+        //NOTE: some functions return Ok(Data), which might occasionally be helpful
+        // for logging purposes but which we ignore here
+        let filename = action::url_to_file(&self.url);
+        let path = Path::new(dir).join(filename);
+        let mut cache = String::new();
+        let mut html  = String::new();
+
+        //if `get_cache` fails, we assume there is no cache and this is the first run
+        action::scrape::get_cache(&path, &mut cache);
+
+        if let Err(e) = action::scrape::get_url(&self.url, &mut html) {
+            //nothing to update if there's no new info
+            return Err(format!("Failed to download page: {}", e));
+        }
+
+        //update the cache
+        if let Err(e) = self.via.log(&path, &html, timestamp) {
+            //if the cache cannot be updated there's something pretty wrong
+            //there's also a chance our info is screwed up
+            //not returning here though would be problematic, as we want to
+            // complain that the cache couldn't be updated, but there could be
+            // other errors below; we'd have to return a Vec<String>
+            return Err(format!("Failed to update cache: {}", e));
+        }
+
+        //if everything above has worked, 
+        let diff = action::scrape::diff(&cache, &html);
+        //send the message and return the result
+        match self.via.contact(&self.url, &diff, timestamp) {
+            Ok(_)  => Ok(()),
+            Err(e) => Err(format!("Failed to contact user: {}", e))
+        }
     }
 }
 

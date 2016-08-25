@@ -52,6 +52,7 @@ const PUSHJET_PRIORITY: u8 = 3;
 
 /* Define the 'Action' type, which stores contact info and metadata
  */
+
 pub enum Action {
     //New form of `ast::Contact` that includes the values it depends on
     //Makes it harder for a un-definition to slip through the cracks
@@ -70,7 +71,8 @@ pub enum Action {
     LogAll,
 }
 
-fn extract<'a>(target: ast::VarType, vars: &'a parse::Vars) -> Result<&'a str,String>{
+fn extract<'a>(target: ast::VarType, 
+               vars: &'a parse::Vars) -> Result<&'a str,String>{
     //shorthand for extracting a var from Vars with a string error message
     //use `try!(extract(..))` and it'll throw helpful error messages
     //helper for Action::extrapolate
@@ -79,8 +81,10 @@ fn extract<'a>(target: ast::VarType, vars: &'a parse::Vars) -> Result<&'a str,St
         None => Err(format!("Necessary variable not defined: {:?}", target)),
     }
 }
+
 impl Action {
-    pub fn extrapolate(base: ast::Contact, vars: &parse::Vars) -> Result<Self,String>{
+    pub fn extrapolate(base: ast::Contact, 
+                       vars: &parse::Vars) -> Result<Self,String>{
         //converts the basic information from ast::Contact into a fuller version
         // by extracting the relevant variables from `vars` and storing them
         match base {
@@ -107,25 +111,30 @@ impl Action {
             },
         }
     }
-    pub fn contact(&self, url: hyper::Url, delta: &str, timestamp: &DateTime<Local>) 
-        -> Result<(),String> {
+    pub fn contact(&self, url: &hyper::Url, delta: &str, 
+                   timestamp: &DateTime<Local>) -> Result<(),String> {
         //NOTE: `delta` is ONLY what you want to communicate to the user
         //  (probably just the changes)
         //communicate changes using whatever method
         let url_short = url.domain().unwrap_or(url.as_str());
         let subject = format!("Update from `{}` at `{}`", url_short, timestamp);
-        match self {
+        let res = match self {
             &Action::Pushjet { secret: ref s, url: ref pj_u } => 
-                pushjet(pj_u.clone(), &s, delta, &subject, 3, url.as_str()),
+                pushjet(pj_u.clone(), &s, delta, &subject, 
+                        PUSHJET_PRIORITY, url.as_str()),
             &Action::Email { domain: ref d, secret: ref s, recip: ref r } => 
                 post_email(s, &d, &r, &subject, delta),
-            _ => return Ok(())
+            _ => Ok(String::new())  //TODO: don't do this?
         };
+        match res {
+            Ok(_)  => Ok(()),
+            Err(e) => Err(format!("Failed to convey message: {}", e))
+        }
         //should `log` be called here? or right after this function?
-        Ok(())    
     }
-    pub fn log(&self, dir: &str, filename: &str, text: &str, timestamp: &DateTime<Local>) 
-        -> Result<(),String> {
+    //pub fn log(&self, dir: &str, filename: &str, text: &str, 
+    pub fn log(&self, path: &PathBuf, text: &str, 
+               timestamp: &DateTime<Local>) -> Result<(),String> {
         //NOTE: `text` is the FULL page html, NOT just the changes
         //store `text` (i.e. a full page) to that page's log file
         //this will be called every time delta.len() > 0 (on every change)
@@ -138,7 +147,7 @@ impl Action {
         //  Anything Else:
         //      only store if there was some change
         //      rewrite entire file
-        let path = Path::new(dir).join(filename);
+        //let path = Path::new(dir).join(filename);
         let file = match *self {
             Action::LogAll => OpenOptions::new().append(true).create(true).open(path),
             _               => OpenOptions::new().write(true).create(true).open(path)
@@ -153,11 +162,23 @@ impl Action {
             Err(e) => Err(format!("Failed to write to file: {}", e.description()))
         }
     }
+    /*
+    pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+        TODO: move to job or something
+        // 1. get page contents
+        // 2. open cache contents
+        // 3. diff them
+        // 4. contact the user
+        // 5. update the cache
+        Ok(())
+
+    }
+    */
 }
 
 
 
-pub fn url_to_str(url: &hyper::Url) -> String {
+pub fn url_to_file(url: &hyper::Url) -> String {
     //try to make descriptive name out of url to use for file cache
     //can't just use the domain, because there could be collisions
     //if we can't, just use the url itself (without the forward slashes)
@@ -167,6 +188,7 @@ pub fn url_to_str(url: &hyper::Url) -> String {
     // otherwise with distinct jobs with the same url, user might be 
     //  alerted twice after one change
     let suffix = ".cache";
+
     let mut prefix = {
         if let (Some(s), Some(d)) = (url.path_segments(), url.domain()) {
             let mut sum = d.to_owned();
