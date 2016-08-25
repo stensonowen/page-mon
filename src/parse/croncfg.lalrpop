@@ -83,7 +83,10 @@ pub Var: ast::Var = {
 //used for Email and Secret (in lieu of different regexes which 
 // cause lalrpop to error even though they're unambiguous
 //Should just match misc strings I guess
-Text = r#""[\w@\.]+""#;
+Text: &'input str = {
+    //return a slice without the quotes
+    <t:r#""[\w@\.]+""#> => &t[1..t.len()-1],
+};
 //Email = r#""\w+@"# Url r#"""#;
 //Secret = r#""[0-9a-fA-F]{32}""#;
 

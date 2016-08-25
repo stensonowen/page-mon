@@ -37,9 +37,14 @@ use std::{thread,time};
 extern crate chrono;
 use chrono::{DateTime,Local,Duration,Timelike};
 
+use action::contact::hyper;
+//extern crate hyper;
+//use hyper;
 fn main() {
-    //TODO: replace this with a constant
-    let input_file = Path::new("/home/owen/page-mon/config");
+    //TODO: replace strs with constants
+    //TODO: start threads for each tasks
+    //TODO: replace vec with map to futures?
+    let input_file = Path::new("/home/owen/page-mon/config_");
     //let cache_path = "/var/cache/page-mon_cache";
     let cache_path = "/tmp/page-mon_cache";
 
@@ -47,11 +52,6 @@ fn main() {
     let jobs: Vec<job::Job> = cmds.into_iter().map(|c| job::Job::from(c, &vars).unwrap()).collect();
     //panic! if a job is invalid
     
-    //let mut dt = Local::now();
-    //let mut dur = time_to_next_minute(&dt).to_std();
-    //thread::sleep(dur);
-    //wait for the minute to start
-    //let mut now = time::Instant::now();
     let mut now = Local::now();
     thread::sleep(time_to_next_minute(&now));
 
