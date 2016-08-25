@@ -106,7 +106,7 @@ impl Calendar {
         month_set
     }*/
 
-    pub fn fire_now(&self, now: DateTime<Local>) -> bool {
+    pub fn fire_now(&self, now: &DateTime<Local>) -> bool {
         //datetimes are a little more pleasant to work with
         //just u8's allow us to check validity of non-exisistant dates
         self.fire_at_vals(now.minute()  as u8, 

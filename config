@@ -11,12 +11,14 @@
 #Set contact/storage variables
 #Variable names are case insensitive
 #`dir` is the only variable that is necessary
-dir   = "/home/owen/tmp/page-mon_log"
+DIR = "/var/cache/page-mon_log"
 #`email` and `secret` are only necessary if they're used
-Email = "stensonowen@gmail.com"
-SECRET="0123456789abcdef0123456789abcdef"
+email_domain = "lorem.ipsum"
+email_secret = "0123456789abcdef0123456789abcdef"
+email_to     = "stensonowen@gmail.com"
 #`url` is only necessary if `secret` is used with a self-hosted pushjet server
-url   = "https://api.pushjet.io/"
+pushjet_url = "https://api.pushjet.io/"
+pushjet_secret = "0123456789abcdef0123456789abcdef"
 
 
 #Check stallman.org every minute
