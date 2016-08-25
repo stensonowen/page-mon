@@ -38,6 +38,14 @@ const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebK
 //which should instead be compared tag-by-tag
 const DIFF_THRESHOLD: usize = 10_000;
 
+/*
+ * TODO List: To make diffs better:
+ *   * Add context to changes
+ *   * Add smarter way to decide whether to decompose or diff the whole thing
+ *      e.g. JSON
+ *   * Add more relevant html tags?
+ */  
+
 
 fn rhs_of_diff(l: &str, r: &str) -> String {
     //`diff` `l` and `r`, and append all the unique parts of `r` 
@@ -45,10 +53,11 @@ fn rhs_of_diff(l: &str, r: &str) -> String {
     //TODO: maybe include context? A dozen characters before/after?
     let differences = diff::chars(&l, &r);
     let mut rhs = String::new();
-    let mut continuous = true;
+    let mut continuous = false;
     for diff in differences {
         if let diff::Result::Right(change) = diff {
-            rhs.push(change)
+            rhs.push(change);
+            continuous = true;
         } else if continuous {
             //add newlines if `Both` or `Left` separates two `Right`s
             rhs.push('\n');
@@ -79,7 +88,9 @@ fn decompose_and_diff(old: &str, new: &str) -> String {
         for (old, new) in elems {
             let diff_buf = rhs_of_diff(&old.text(), &new.text());
             diff.push_str(&diff_buf);
-            diff.push('\n');
+            if diff_buf.is_empty() == false {
+                diff.push('\n');
+            }
         }
     }
     diff

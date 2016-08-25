@@ -110,6 +110,9 @@ impl Job {
 
         //if everything above has worked, 
         let diff = action::scrape::diff(&cache, &html);
+        if diff.is_empty() {
+            return Ok(());
+        }
         //send the message and return the result
         match self.via.contact(&self.url, &diff, timestamp) {
             Ok(_)  => Ok(()),
