@@ -23,7 +23,7 @@ pushjet_secret = "0123456789abcdef0123456789abcdef"
 
 #Check stallman.org every minute
 #Whitespace can be omitted where it does not cause ambiguity
-*****https://stallman.org/
+*****https://stallman.org/ -> text
 
 #Check blog at noon on every weekday
 #Urls must begin with `https://` (or `http://`)
@@ -31,6 +31,10 @@ pushjet_secret = "0123456789abcdef0123456789abcdef"
 
 #Check if it's christmast every midnight of December
 0 0 * DEC * https://isitchristmas.com/
+
+#Check the not-so-important things less frequently
+#This will only run on Feb 29 (so every four years)
+0 0 29 Feb * http://www.hasthelargehadroncolliderdestroyedtheworldyet.com/
 
 #keep track of the top of all time on your favorite subreddit 
 #check every 5 minutes of every hour

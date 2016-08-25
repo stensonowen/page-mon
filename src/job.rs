@@ -42,7 +42,7 @@ use std::path::{Path,PathBuf};
 
 pub struct Job {
     time:   calendar::Calendar,
-    url:    hyper::Url,
+    pub url:    hyper::Url,
     //via:    Contact,    //the one above, NOT the one in ast.rs
     via:    action::Action,
 }
@@ -62,13 +62,21 @@ impl Job {
         let contact = try!(action::Action::extrapolate(cmd.act.contact, vars));
         Ok(Job { time: cal, url: url, via: contact })
     }
-    pub fn time_to_fire(&self, timestamp: &DateTime<Local>) -> bool {
-        //wrapper around Calendar functionality to determine if "now" is 
-        //a "valid" minute
-        self.time.fire_now(timestamp)
-
+    //pub fn time_to_fire(&self, timestamp: &DateTime<Local>) -> bool {
+    //    //wrapper around Calendar functionality to determine if "now" is 
+    //    //a "valid" minute
+    //    self.time.fire_now(timestamp)
+    //}
+    pub fn fire_if_match(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+        //wraps Calendar::fire_now
+        if self.time.fire_now(timestamp) {
+            self.fire(dir, timestamp)
+        } else {
+            Ok(())
+        }
     }
-    pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+
+    fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
         //Do this in a different order so at most one Error is returned
         // 1. get page contents
         // 2. open cache contents

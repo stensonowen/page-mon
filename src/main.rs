@@ -34,12 +34,14 @@ use std::path::Path;
 //use std::time::Duration;
 use std::{thread,time};
 //use std::thread::sleep;
-//extern crate chrono;
-//use chrono::{DateTime,Local,Duration,Timelike};
+extern crate chrono;
+use chrono::{DateTime,Local,Duration,Timelike};
 
 fn main() {
     //TODO: replace this with a constant
     let input_file = Path::new("/home/owen/page-mon/config");
+    //let cache_path = "/var/cache/page-mon_cache";
+    let cache_path = "/tmp/page-mon_cache";
 
     let (cmds, vars) = parse::parse(input_file).unwrap();
     let jobs: Vec<job::Job> = cmds.into_iter().map(|c| job::Job::from(c, &vars).unwrap()).collect();
@@ -49,29 +51,32 @@ fn main() {
     //let mut dur = time_to_next_minute(&dt).to_std();
     //thread::sleep(dur);
     //wait for the minute to start
-    let mut now = time::Instant::now();
-    let mut dur = time_to_next_minute(&now);
-    thread::sleep(dur);
+    //let mut now = time::Instant::now();
+    let mut now = Local::now();
+    thread::sleep(time_to_next_minute(&now));
 
 
     loop {
-        now = time::Instant::now();
         //iterate through the jobs, executing those for which it is time
         for j in &jobs {
-
+            println!("Starting job {}", j.url);
+            if let Err(e) = j.fire_if_match(cache_path, &now) {
+                println!("Error in job {}: `{}`", j.url, e);
+            }
         }
-        dur = time_to_next_minute(&now);
-        thread::sleep(dur);
+        now = Local::now();
+        thread::sleep(time_to_next_minute(&now));
     }
 }
 
-//fn time_to_next_minute(last_run: &DateTime<Local>) -> Duration {
-fn time_to_next_minute(last_run: &time::Instant) -> time::Duration {
+fn time_to_next_minute(last_run: &DateTime<Local>) -> time::Duration {
+//fn time_to_next_minute(last_run: &time::Instant) -> time::Duration {
     //compute the amount of time program should wait before checking again
     //if cycling through everything took more than 1 minute, then it'll miss 
     // the next minute (TODO?)
     //It's okay to wait a little too long, but do not wait too short
     
+    /*
     // 20 -> 40
     // 61 -> 59
     let seconds_since = last_run.elapsed().as_secs() as i64;
@@ -81,4 +86,9 @@ fn time_to_next_minute(last_run: &time::Instant) -> time::Duration {
         seconds_to_next += 60;
     }
     time::Duration::from_secs(seconds_to_next as u64)
+        */
+    let sec = last_run.second() as i64; // 0 <= sec <= 60
+    //TODO: will there ever be an instance when unwrap fails?
+    //DateTime::second() should never exceed 60, right?
+    Duration::seconds(60i64 - sec).to_std().unwrap()
 }
