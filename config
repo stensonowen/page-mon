@@ -23,7 +23,13 @@ pushjet_secret = "0123456789abcdef0123456789abcdef"
 
 #Check stallman.org every minute
 #Whitespace can be omitted where it does not cause ambiguity
-*****https://stallman.org/ -> text
+#*****https://stallman.org/ -> text
+#*****https://www.random.org/integers/?num=100&min=1&max=100&col=5&base=10&format=html&rnd=new -> text
+***** https://api.twitch.tv/kraken/channels/truktruk -> text
+***** https://api.twitch.tv/kraken/channels/teamfortresstv -> text
+***** https://www.api.twitch.tv/kraken/channels/teamfortresstv -> append
+
+
 
 #Check blog at noon on every weekday
 #Urls must begin with `https://` (or `http://`)

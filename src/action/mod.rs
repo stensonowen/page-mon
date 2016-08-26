@@ -204,6 +204,7 @@ pub fn url_to_file(url: &hyper::Url) -> String {
     let hash = hasher.finish();
     let uid = format!("{:09}", hash % 1_000_000_000);
 
+    prefix.push('~');
     prefix.push_str(&uid);
     prefix.push_str(suffix);
     prefix
