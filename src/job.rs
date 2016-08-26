@@ -37,7 +37,7 @@ extern crate hyper;
 extern crate chrono;
 use self::chrono::{DateTime,Local};
 
-use std::path::{Path,PathBuf};
+use std::path::Path;
 
 
 pub struct Job {
@@ -91,6 +91,8 @@ impl Job {
         let mut html  = String::new();
 
         //if `get_cache` fails, we assume there is no cache and this is the first run
+        //TODO: maybe rework this so an error is handles?
+        //      or so get_cache doesn't return a result?
         action::scrape::get_cache(&path, &mut cache);
 
         if let Err(e) = action::scrape::get_url(&self.url, &mut html) {

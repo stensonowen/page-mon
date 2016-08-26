@@ -25,12 +25,11 @@ extern crate select;
 
 use std::fs::File;
 use std::error::Error;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::PathBuf;
 
 use self::hyper::header::*;
 use self::select::predicate::Name;
-
 
 //use a descriptive user agent? or a generic one?
 const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
@@ -96,33 +95,6 @@ fn decompose_and_diff(old: &str, new: &str) -> String {
     diff
 }
 
-
-/*
-pub fn compare(url: hyper::Url, path: &str) -> Result<String,String> {
-    //`old` has been converted to bytes, is that a problem?
-    //TODO: verify old cache file exists before this
-    //let filename = url_to_str(&url);
-    //create buffers for the `old` and `new` htmls, and attempt to load them
-    //BUG: we need the full difference also
-    //DEPRECATED
-    let mut old_txt = String::new();
-    if let Err(e) = get_cache(path, &mut old_txt) {
-        return Err(format!("Failed to open cache: {}", e))
-    }
-    let mut new_txt = String::new();
-    if let Err(e) = get_url(url, &mut new_txt) {
-        return Err(format!("Failed to fetch new page: {}", e))
-    }
-
-    //decide which method to use to diff text
-    //TODO: maybe recognize JSON and treat it differently?
-    let diff_fn = match new_txt.len() > DIFF_THRESHOLD {
-        true  => decompose_and_diff,
-        false => rhs_of_diff,
-    };
-    Ok(diff_fn(&old_txt, &new_txt))
-}*/
-
 pub fn diff(old: &str, new: &str) -> String {
     //master differ
     //decide which diff fn to use and use it
@@ -134,43 +106,21 @@ pub fn diff(old: &str, new: &str) -> String {
     diff_fn(&old, &new)
 }
 
-
-/*
-pub fn set_cache(filename: &str, contents: &str) -> Result<(),String> {
-    //create or replace old file
-    let mut file = match File::create(filename) {
-        Ok(f)  => f,
-        Err(e) => return Err(format!("Failed to create cache: {}", 
-                                     e.description().to_string())),
-    };
-    match file.write_all(contents.as_bytes()) {
-        Ok(_)  => Ok(()),
-        Err(e) => Err(format!("Failed to write cache: {}", 
-                              e.description().to_string())),
-    }
-}
-*/
-
 /* NOTE:
  *  Should `get_cache` and `get_url` be public? Or wrapped?
  *  Job::fire() needs to have possession of both the diff and the `new`,
  *   so a wrapper would have to return a tuple of results or something
  */
 
-//pub fn get_cache(filename: &str, buffer: &mut String) -> Result<usize,String> {
 pub fn get_cache(filename: &PathBuf, buffer: &mut String) -> Result<usize,String> {
     //open cached version of a page. Return the html or an error message
     //let filename = url_to_str(url);
     let mut file = match File::open(filename) {
-        Err(e) => return Err(format!("File open error: {}",
-                                     e.description()
-                                     .to_string())),
+        Err(e) => return Err(format!("File open error: {}", e.description())),
         Ok(f)  => f,
     };
     match file.read_to_string(buffer) {
-        Err(e) => Err(format!("File open error: {}",
-                              e.description() 
-                              .to_string())),
+        Err(e) => Err(format!("File open error: {}", e.description())), 
         Ok(_)  => Ok(buffer.len()),
     }
 }
@@ -190,15 +140,14 @@ pub fn get_url(url: &hyper::Url, buffer: &mut String) -> Result<usize,String> {
                     .headers(headers)
                     .send();
     match res {
-        Err(e) => Err(format!("Request error: {}", 
-                              e.description().to_string())),
+        Err(e) => Err(format!("Request error: {}", e.description())),
         Ok(mut r)  => {
             //let mut text = String::new();
             match r.read_to_string(buffer) {
-                Err(e) => Err(format!("Read error: {}", 
-                                      e.description().to_string())),
+                Err(e) => Err(format!("Read error: {}", e.description())),
                 Ok(_)  => Ok(buffer.len()),
             }
         }
     }
 }
+

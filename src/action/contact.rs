@@ -27,11 +27,7 @@ extern crate hyper;
 extern crate url;
 extern crate lettre;
 
-use std::env;
 use std::error::Error;
-use std::fs::File;
-use std::io::Read;
-use std::path::PathBuf;
 //web stuff
 use self::hyper::Url;
 use self::url::form_urlencoded::Serializer;
@@ -41,81 +37,16 @@ use self::lettre::email::EmailBuilder;
 use self::lettre::transport::EmailTransport;
 use self::lettre::transport::smtp::SmtpTransportBuilder;
 
-const CONFIG_FILE: &'static str = "pushjet.json";
-const DEFAULT_PJ_URL: &'static str = "https://api.pushjet.io";
-const PROGRAM_DESCIP: &'static str = "page-mon";
 
-fn find_file(name: &str) -> Option<PathBuf> {
-    //check current directory for file
-    //if absent, check previous directory for file
-    //start with current working directory
-    let mut path = env::current_dir().unwrap();
-    loop {
-        //for each parent directory, check if file is present
-        let guess = path.join(name);
-        //println!("\tguess = {:?}", guess);
-        if guess.is_file() {
-            //sought file is present
-            return Some(guess);
-        } else if path.pop() == false {
-            //parent directory doesn't exist, so file isn't found
-            return None;
-        }
-    }
-}
-
-pub fn load_config() -> Result<(hyper::Url,String),String> {
-    //returns url and `secret`
-    //parse file first
-    //locate file in some parent/grandparent folder;
-    let path = match find_file(CONFIG_FILE) {
-        Some(p) => p,
-        None    => return Err("No such file exists".to_string())
-    };
-    //open it
-    let mut file = match File::open(path) {
-        Ok(f)   => f,
-        //Err(e)=>return Err(e.description().to_string().as_ref()) //TODO
-        //do this with Result<_,&str> and lifetimes?
-        Err(e)  => 
-            return Err(format!("File input err: {}", e.description()))
-    };
-    // and read its contents;
-    let mut text = String::new();
-    if let Err(e) = file.read_to_string(&mut text) {
-        return Err(format!("File read err: {}", e.description()))
-    }
-    //then parse the data in it.
-    let data = match json::parse(&text) {
-        Ok(d)   => d,
-        Err(e)  => 
-            return Err(format!("JSON parse err: {}", e.description()))
-    };
-    //`secret` must be present
-    let secret = match data["secret"].as_str() { 
-        Some(s) => s.to_string(),
-        None => 
-            return Err("Data err: missing field `secret`".to_string())
-    };
-    //`url` has a reasonable default 
-    let address = match data["url"].as_str() {
-        Some(u) => u,
-        None    => DEFAULT_PJ_URL,
-    };
-    //make sure url is valid
-    let url = match hyper::Url::parse(address) {
-        Ok(u)   => u,
-        Err(e)  => 
-            return Err(format!("Url parse err: {}", e.description()))
-    };
-
-    Ok((url, secret))
-}
-
+#[allow(dead_code)]
 pub fn generate_email(from: &str, to: &str, subject: &str, 
                       text: &str) -> Result<String,String> {
     //send an email via lettre over port 25
     //requires postfix be set up with a domain and everything
+    //No support for this at the moment, but there might be someday.
+    //Pushjet uses GCM and mailgun almost certainly doesn't 
+    // respect user privacy, so it's reasonable some people would
+    // want to use their own email server instead.
     let email = EmailBuilder::new()
                     .to(to)
                     .from(from)
@@ -146,6 +77,7 @@ pub fn post_email(api_key: &str, domain: &str, to: &str,
     //  auth: "api:api_key"
     //  url:  "api.mailgun.net/.../DOMAIN/..."
     //  from: "page-mon <mailgun@DOMAIN 
+    const PROGRAM_DESCIP: &'static str = "page-mon";
     
     let url = format!("https://api.mailgun.net/v3/{}/messages", domain);
     let url = match Url::parse(url.as_ref()) {
@@ -226,4 +158,74 @@ pub fn pushjet(pushjet_url: hyper::Url, secret: &str, message: &str,
 
 
 
+/*
+ * This was used for loading pushjet info so I wouldn't commit it
+ */
+/*
+fn find_file(name: &str) -> Option<PathBuf> {
+    //check current directory for file
+    //if absent, check previous directory for file
+    //start with current working directory
+    let mut path = env::current_dir().unwrap();
+    loop {
+        //for each parent directory, check if file is present
+        let guess = path.join(name);
+        //println!("\tguess = {:?}", guess);
+        if guess.is_file() {
+            //sought file is present
+            return Some(guess);
+        } else if path.pop() == false {
+            //parent directory doesn't exist, so file isn't found
+            return None;
+        }
+    }
+}
+
+pub fn load_config() -> Result<(hyper::Url,String),String> {
+    //returns url and `secret`
+    //parse file first
+    //locate file in some parent/grandparent folder;
+    let path = match find_file(CONFIG_FILE) {
+        Some(p) => p,
+        None    => return Err("No such file exists".to_string())
+    };
+    //open it
+    let mut file = match File::open(path) {
+        Ok(f)   => f,
+        //Err(e)=>return Err(e.description().to_string().as_ref()) //TODO
+        //do this with Result<_,&str> and lifetimes?
+        Err(e)  => 
+            return Err(format!("File input err: {}", e.description()))
+    };
+    // and read its contents;
+    let mut text = String::new();
+    if let Err(e) = file.read_to_string(&mut text) {
+        return Err(format!("File read err: {}", e.description()))
+    }
+    //then parse the data in it.
+    let data = match json::parse(&text) {
+        Ok(d)   => d,
+        Err(e)  => 
+            return Err(format!("JSON parse err: {}", e.description()))
+    };
+    //`secret` must be present
+    let secret = match data["secret"].as_str() { 
+        Some(s) => s.to_string(),
+        None => 
+            return Err("Data err: missing field `secret`".to_string())
+    };
+    //`url` has a reasonable default 
+    let address = match data["url"].as_str() {
+        Some(u) => u,
+        None    => DEFAULT_PJ_URL,
+    };
+    //make sure url is valid
+    let url = match hyper::Url::parse(address) {
+        Ok(u)   => u,
+        Err(e)  => 
+            return Err(format!("Url parse err: {}", e.description()))
+    };
+
+    Ok((url, secret))
+}*/
 

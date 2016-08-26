@@ -33,6 +33,7 @@ use std::io::{BufReader, BufRead};
 use std::error::Error;
 
 const DEFAULT_PJURL: &'static str = "https://api.pushjet.io";
+const DEFAULT_DIR:   &'static str = "/tmp/page-mon_cache";
 
 use self::ast::{Var,VarType};
 
@@ -97,10 +98,8 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
             ast::Line::Comment  => (),
         };
     }
-    insert_default_variable_values(&mut variables);
-    if let Err(e) = verify(&variables) {
-        errors.push(e);
-    }
+    //Insert default Pushjet url and default directory variables
+    amend(&mut variables);
     //return errors or content
     if errors.is_empty() {
         Ok((commands, variables))
@@ -110,13 +109,18 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
 }
 
 
-fn insert_default_variable_values(vars: &mut Vars) {
-    //fill in default value(s?)
+//fn insert_default_variable_values(vars: &mut Vars) {
+fn amend(vars: &mut Vars) {
+    //fill in default variable values into list of variables
     if vars.contains_key(&VarType::PjUrl) == false {
         vars.insert(VarType::PjUrl, DEFAULT_PJURL.to_string());
     }
+    if vars.contains_key(&VarType::Dir) == false {
+        vars.insert(VarType::Dir, DEFAULT_DIR.to_string());
+    }
 }
 
+/*
 fn verify(vars: &Vars) -> Result<(),String> {
     if vars.contains_key(&VarType::Dir) == false {
         Err("No `DIR` variable set".to_string())
@@ -124,6 +128,5 @@ fn verify(vars: &Vars) -> Result<(),String> {
     else {
         Ok(())
     }
-}
+}*/
 
-//TODO: amend

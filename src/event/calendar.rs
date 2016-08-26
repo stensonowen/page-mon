@@ -23,7 +23,7 @@ use std::ops;
 use std::collections::BTreeSet;
 
 extern crate chrono;
-use self::chrono::{TimeZone, Local, Datelike, Timelike, DateTime};
+use self::chrono::{Local, Datelike, Timelike, DateTime};
 
 use event::value_itr::*;
 use super::super::parse::ast::{Time, Value};

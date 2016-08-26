@@ -37,15 +37,15 @@ use std::{thread,time};
 extern crate chrono;
 use chrono::{DateTime,Local,Duration,Timelike};
 
-use action::contact::hyper;
-//extern crate hyper;
-//use hyper;
+//use action::contact::hyper;
+
 fn main() {
     //TODO: replace strs with constants
     //TODO: start threads for each tasks
     //TODO: replace vec with map to futures?
     let input_file = Path::new("/home/owen/page-mon/config_");
     //let cache_path = "/var/cache/page-mon_cache";
+    //TODO: make dir if absent
     let cache_path = "/tmp/page-mon_cache";
 
     let (cmds, vars) = parse::parse(input_file).unwrap();

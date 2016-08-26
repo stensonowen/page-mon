@@ -25,17 +25,14 @@
 pub mod scrape;
 pub mod contact;
 //use super::parse::{Var, Vars};
-use super::parse::Vars;
-use super::parse::ast::VarType;
 
 use super::parse;
 use super::parse::ast;
 //use self::scrape::url_to_str;
 use self::contact::{post_email,pushjet};
-use std::collections::HashMap;
 
 use std::fs::OpenOptions;
-use std::path::{PathBuf,Path};
+use std::path::PathBuf;
 use std::io::Write;
 //use std::fs::File;
 use std::error::Error;
