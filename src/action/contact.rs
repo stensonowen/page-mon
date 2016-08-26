@@ -22,7 +22,6 @@
 // via pushjet using PUSHJET_SECRET var
 //      (but temporarily using pushjet.json located in any parent dir)
 
-extern crate json;
 extern crate hyper;
 extern crate url;
 extern crate lettre;

@@ -30,6 +30,7 @@ mod job;
 mod action;
 
 use std::path::Path;
+use std::fs::DirBuilder;
 
 use std::{thread,time};
 extern crate chrono;
@@ -40,9 +41,16 @@ fn main() {
     //TODO: start threads for each tasks
     //TODO: replace vec with map to futures?
     let input_file = Path::new("/home/owen/page-mon/config_");
+    //let input_file = Path::new("/home/pi/page-mon/config");
     //let cache_path = "/var/cache/page-mon_cache";
     //TODO: make dir if absent
     let cache_path = "/tmp/page-mon_cache";
+    //let cache_path = "/home/pi/page-mon/cache";
+    assert!(input_file.is_file());
+    if Path::new(cache_path).is_dir() == false {
+        DirBuilder::new().recursive(true).create(cache_path).unwrap();
+    }
+    assert!(Path::new(cache_path).is_dir());
 
     let (cmds, vars) = parse::parse(input_file).unwrap();
     let jobs: Vec<job::Job> = cmds.into_iter().map(|c| job::Job::from(c, &vars).unwrap()).collect();
