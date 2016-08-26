@@ -37,15 +37,6 @@ const DEFAULT_DIR:   &'static str = "/tmp/page-mon_cache";
 
 use self::ast::{Var,VarType};
 
-//#[derive(PartialEq, Hash, Eq)]
-//pub enum Var {
-//    EmailDomain,        //necessary for email
-//    EmailSecret,        //necessary for email
-//    EmailRecip,         //nec for email
-//    PushjetUrl,         //optional  for pushjet
-//    PushjetSecret,      //necessary for pushjet
-//    Dir,                //necessary
-//}
 
 pub type Vars = HashMap<VarType,String>;
 
@@ -57,7 +48,7 @@ pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
     let file = match File::open(input) {
         Ok(f)  => f,
         Err(e) => return Err(vec![format!("Failed to open config file for parsing: {}",
-                                          e.description()).to_string()]),
+                                          e.description())]),
     };
     //keep track of lines:
     let mut variables = Vars::new();
@@ -119,14 +110,3 @@ fn amend(vars: &mut Vars) {
         vars.insert(VarType::Dir, DEFAULT_DIR.to_string());
     }
 }
-
-/*
-fn verify(vars: &Vars) -> Result<(),String> {
-    if vars.contains_key(&VarType::Dir) == false {
-        Err("No `DIR` variable set".to_string())
-    }
-    else {
-        Ok(())
-    }
-}*/
-

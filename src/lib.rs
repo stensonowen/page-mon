@@ -18,17 +18,33 @@
  * 	More information in the enclosed `LICENSE' file
  */
 
-//mod ast;
-//pub mod croncfg;
+/* NOTE about this file:
+ *  test suite was initially made way at the beginning of this project,
+ *  when I had a different approach in mind: I was trying to create an 
+ *  actual schedule by enabling each `Time` struct to predict when it 
+ *  would next run, which would have a theoretical performance benefit 
+ *  over the alternative (currently in use), which just checks all of
+ *  the jobs every minute. I put a lot of thought into abandoning that
+ *  strategy after a week or two of working on it, mostly because it'd 
+ *  be difficult to verify tasks would run on time with certainty, which
+ *  is kind of important to this project. The test suite was initially
+ *  designed to amend that, but there are just too many weird corner 
+ *  cases (cough Pope Gregory XIII) for it to be comprehensive. This 
+ *  file remains, and adds some possibly unnecessary certainty that 
+ *  most everything in event/ *.rs is implemented correctly.
+*/
+
+//making these public removes some warnings about unused entities
+#[allow(dead_code)]
 mod parse;
-//use parse::croncfg::*;
-//use parse::ast;
-pub mod event;
+#[allow(dead_code)]
+mod event;
+
 extern crate chrono;
 
 #[cfg(test)]
 mod tests {
-    use super::croncfg::{parse_Line, parse_Command};
+    use super::parse::croncfg::{parse_Line, parse_Command};
     use chrono::{Local, TimeZone, Datelike, Timelike, DateTime};
     use event::calendar::Calendar;
 
@@ -62,13 +78,13 @@ mod tests {
         let mut cmd = parse_Command("* * * * 0 https://test.com").unwrap();
         let cal = Calendar::from_time(&mut cmd.time);
         let time = Local.ymd(1970, 1, 1).and_hms(0, 0, 0);
-        assert!(cal.fire_now(time) == false);
-        assert!(cal.fire_now(time.with_day(4).unwrap()) == true);
+        assert!(cal.fire_now(&time) == false);
+        assert!(cal.fire_now(&time.with_day(4).unwrap()) == true);
         for i in 1 .. 32 {
             let dt = time.with_day(i).unwrap();
             let is_sunday = dt.weekday().num_days_from_sunday() == 0;
             print_datetime(&dt, "weekday_0");
-            assert!(cal.fire_now(dt) == is_sunday);
+            assert!(cal.fire_now(&dt) == is_sunday);
         }
     }
 
@@ -84,7 +100,7 @@ mod tests {
             let dt = time.with_day(i).unwrap();
             let is_even = dt.day()%2 == 0;
             print_datetime(&dt, "date_0");
-            assert!(cal.fire_now(dt) == is_even);
+            assert!(cal.fire_now(&dt) == is_even);
         }
     }
 
@@ -102,7 +118,7 @@ mod tests {
             let is_tu_th_sa = dow_index%2 == 0 && dow_index>0;   //even and not Sunday
             let has_a_3 = vec![3, 13, 23, 30, 31].contains(&i);
             print_datetime(&dt, "date_wd_0");
-            assert!(cal.fire_now(dt) == is_tu_th_sa || has_a_3);
+            assert!(cal.fire_now(&dt) == is_tu_th_sa || has_a_3);
         }
     }
 

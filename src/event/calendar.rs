@@ -77,35 +77,6 @@ impl Calendar {
         }
     }
 
-    /*
-    pub fn get_month(&self, year: i32, month: u8) -> ValidSet {
-        //TODO: unit tests
-        let mut month_set = self.mon.clone();
-        let ref dow_set = self.dow;
-        //remove days not in this month:
-        let days_in_month = Calendar::days_in_month(year, month) + 1;
-        for i in days_in_month .. 32u8 {
-            month_set.remove(&i);
-        }
-        //get the first of the month's day of the week. 0 = sunday
-        let first_day = Local.ymd(year, month as u32, 1).weekday().num_days_from_sunday();
-        let week_len = WEEKDAY_RANGE.end - WEEKDAY_RANGE.start;
-        let offset = (week_len - first_day as u8) % week_len;
-        for weekday in dow_set.iter() {
-            let mut mult = 0;
-            loop {
-                let guess = weekday + offset + mult * week_len;
-                if guess >= days_in_month {
-                    break;
-                } else {
-                    month_set.insert(guess);
-                }
-                mult += 1;
-            }
-        }
-        month_set
-    }*/
-
     pub fn fire_now(&self, now: &DateTime<Local>) -> bool {
         //datetimes are a little more pleasant to work with
         //just u8's allow us to check validity of non-exisistant dates

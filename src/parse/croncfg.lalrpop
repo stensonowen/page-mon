@@ -52,33 +52,25 @@ pub Line: ast::Line = {
     <cmd:Command>   => ast::Line::Cmd(cmd),
     <v:Var>         => ast::Line::VarSet(v),
     Comment         => ast::Line::Comment,
-    //Whitespace      => ast::Line::Comment, 
 };
 
-
 Comment = r"#.*";
-//Whitespace = r"\s*";    //not sure why this doesn't work
 
-//use ast::VarType;
+use super::ast::VarType as Type;
 pub Var: ast::Var = {
     //all strings must be enclosed in quotes
     //example line: `Email = "stensonowen@gmail.com"`
-    //r"(?i)email_domain" "=" <v:Text>    => ast::Var::EmailDomain(v.to_string()),
-    //r"(?i)email_secret" "=" <v:Text>    => ast::Var::EmailSecret(v.to_string()),
-    //r"(?i)email_to"     "=" <v:Text>    => ast::Var::EmailRecip(v.to_string()),
-    //r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::PjSecret(v.to_string()),
-    //r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
-    //                                    => ast::Var::PjUrl(v.to_string()),
-    //r"(?i)dir"    "=" <v:Dir>           => ast::Var::DataDir( v.to_string()),
-    r"(?i)email_domain" "=" <v:Text> => ast::Var{lhs:ast::VarType::EmailDomain,rhs:v.to_string()},
-    r"(?i)email_secret" "=" <v:Text> => ast::Var{lhs:ast::VarType::EmailSecret,rhs:v.to_string()},
-    r"(?i)email_to"     "=" <v:Text> => ast::Var{lhs:ast::VarType::EmailRecip, rhs:v.to_string()},
-    r"(?i)pushjet_secret" "=" <v:Text> => ast::Var{lhs:ast::VarType::PjSecret, rhs:v.to_string()},
-    r"(?i)pushjet_url"    "=" r#"""# <v:Url> r#"""# 
-                                        => ast::Var{ lhs:ast::VarType::PjUrl, rhs:v.to_string() },
-    r"(?i)dir"    "=" <v:Dir>           => ast::Var{ lhs:ast::VarType::Dir, rhs:v.to_string() },
+    r"(?i)dir"          "=" <v:Dir>     => ast::Var::new(Type::Dir,         v),
+    //r"(?i)dir"          "=" <v:Text>    => ast::Var::new(Type::Dir,         v),
+    r"(?i)email_domain" "=" <v:Text>    => ast::Var::new(Type::EmailDomain, v), 
+    r"(?i)email_secret" "=" <v:Text>    => ast::Var::new(Type::EmailSecret, v),
+    r"(?i)email_to"     "=" <v:Text>    => ast::Var::new(Type::EmailRecip,  v),
+    //r"(?i)pushjet_url"  "=" <v:Text>    => ast::Var::new(Type::PjUrl,       v),
+    r"(?i)pushjet_secret" "=" <v:Text>  => ast::Var::new(Type::PjSecret,    v),
+    r"(?i)pushjet_url" "=" r#"""# <v:Url> r#"""# => ast::Var::new(Type::PjUrl, v),
 };
 
+//Directories and Urls have special characters, so they get their own nonterminal
 //Text:
 //used for Email and Secret (in lieu of different regexes which 
 // cause lalrpop to error even though they're unambiguous
@@ -92,6 +84,7 @@ Text: &'input str = {
 
 //Directory pattern: must be absolute path
 //I guess this means Windows is out
+//Or `Text` could just be used for Dir
 Dir = r#""/.*""#;
 
 
@@ -107,6 +100,8 @@ Action: ast::Action = {
 
 
 Contact: ast::Contact = {
+    //TODO: rename `email` to something else to support both 
+    // email via api (mailgun?) and true email (lettre)?
     r"(?i)email"    => ast::Contact::Email,
     r"(?i)text"     => ast::Contact::Text,
     r"(?i)append"   => ast::Contact::LogAll,

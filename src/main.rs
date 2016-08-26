@@ -31,13 +31,9 @@ mod action;
 
 use std::path::Path;
 
-//use std::time::Duration;
 use std::{thread,time};
-//use std::thread::sleep;
 extern crate chrono;
 use chrono::{DateTime,Local,Duration,Timelike};
-
-//use action::contact::hyper;
 
 fn main() {
     //TODO: replace strs with constants
@@ -70,23 +66,11 @@ fn main() {
 }
 
 fn time_to_next_minute(last_run: &DateTime<Local>) -> time::Duration {
-//fn time_to_next_minute(last_run: &time::Instant) -> time::Duration {
     //compute the amount of time program should wait before checking again
     //if cycling through everything took more than 1 minute, then it'll miss 
     // the next minute (TODO?)
     //It's okay to wait a little too long, but do not wait too short
     
-    /*
-    // 20 -> 40
-    // 61 -> 59
-    let seconds_since = last_run.elapsed().as_secs() as i64;
-    //is there a more succinct way to do this that is actually readable?
-    let mut seconds_to_next = (60 - seconds_since) % 60;
-    if seconds_to_next <= 0 {
-        seconds_to_next += 60;
-    }
-    time::Duration::from_secs(seconds_to_next as u64)
-        */
     let sec = last_run.second() as i64; // 0 <= sec <= 60
     //TODO: will there ever be an instance when unwrap fails?
     //DateTime::second() should never exceed 60, right?

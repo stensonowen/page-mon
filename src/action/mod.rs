@@ -24,19 +24,15 @@
 
 pub mod scrape;
 pub mod contact;
-//use super::parse::{Var, Vars};
 
 use super::parse;
 use super::parse::ast;
-//use self::scrape::url_to_str;
 use self::contact::{post_email,pushjet};
 
 use std::fs::OpenOptions;
 use std::path::PathBuf;
 use std::io::Write;
-//use std::fs::File;
 use std::error::Error;
-
 use std::hash::{Hash, Hasher, SipHasher};
 
 extern crate hyper;
@@ -129,7 +125,6 @@ impl Action {
         }
         //should `log` be called here? or right after this function?
     }
-    //pub fn log(&self, dir: &str, filename: &str, text: &str, 
     pub fn log(&self, path: &PathBuf, text: &str, 
                timestamp: &DateTime<Local>) -> Result<(),String> {
         //NOTE: `text` is the FULL page html, NOT just the changes
@@ -159,18 +154,6 @@ impl Action {
             Err(e) => Err(format!("Failed to write to file: {}", e.description()))
         }
     }
-    /*
-    pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
-        TODO: move to job or something
-        // 1. get page contents
-        // 2. open cache contents
-        // 3. diff them
-        // 4. contact the user
-        // 5. update the cache
-        Ok(())
-
-    }
-    */
 }
 
 
@@ -207,69 +190,3 @@ pub fn url_to_file(url: &hyper::Url) -> String {
     prefix
 }
 
-
-/*
-enum LogType {
-    Append,
-    Create
-}
-
-pub fn act(delta: &str, url: hyper::Url, method: ast::Contact, 
-           vars: &Vars, now: &DateTime<Local>) -> Result<(),String> {
-    //contact the user via `method` (email/pushjet)
-    let url_domain = match url.domain() {
-        Some(d) => d,
-        None => url.as_str(),
-    };
-    let subject = format!("Update from `{}` at `{}`", url_domain, now.to_string()); 
-    match method {
-        ast::Contact::Text => {
-            let secret = match vars.get(&VarType::PjSecret) {
-                Some(s) => s,
-                None    => return Err("No PushjetSecret value defined".to_string()),
-            };
-            //should definitely contain Url, because it was added in 
-            // parse/mod.rs:insert_variable_default_values()
-            //TODO: verify supplied url is valid & parsable
-            let pushjet_url = vars.get(&VarType::PjUrl).unwrap();
-            let pushjet_url = hyper::Url::parse(pushjet_url).unwrap();
-            let page_url = url.as_str();
-            let res = contact::pushjet(pushjet_url, secret, delta, 
-                                       &subject, PUSHJET_PRIORITY, page_url);
-            if let Err(e) = res {
-                return Err(format!("Failed to contact via pushjet: {}", e))
-            }
-        },
-        ast::Contact::Email => {
-            let secret = match vars.get(&VarType::EmailSecret) {
-                Some(s) => s,
-                None    => return Err("No EmailSecret value defined".to_string())
-            };
-            let domain = match vars.get(&VarType::EmailDomain) {
-                Some(d) => d,
-                None    => return Err("No EmailDomain value defined".to_string())
-            };
-            let to = match vars.get(&VarType::EmailRecip) {
-                Some(t) => t,
-                None    => return Err("No EmailRecipient value defined".to_string()),
-            };
-            //let res = contact::post_email(secret.to_string(), domain, to, 
-            let res = contact::post_email(secret, domain, to, 
-                                          &subject, delta);
-            if let Err(e) = res {
-                return Err(format!("Failed to contact via email: {}", e))
-            }
-        },
-
-        _ => (),
-
-    }
-
-    Ok(())
-}
-
-fn log(url: &hyper::Url, log_type: LogType) -> Result<(),String> {
-    //replace or append
-    Ok(())
-
-}*/

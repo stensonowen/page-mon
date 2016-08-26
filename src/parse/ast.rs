@@ -34,7 +34,6 @@
 
 use std::fmt::{Debug, Formatter, Error};
 
-
 pub enum Line {
     //separated by newlines
     Comment,
@@ -42,18 +41,18 @@ pub enum Line {
     VarSet(Var),
 }
 
-//pub enum Var {
-//    //Just stores data. Cannot assign multiples at the moment
-//    EmailDomain(String),
-//    EmailSecret(String),
-//    EmailRecip(String),
-//    PjSecret(String),  //Pushjet Secret
-//    PjUrl(String),     //Pushjet Url
-//    DataDir(String),    //Directory of data storage
-//}
 pub struct Var {
     pub lhs: VarType,
     pub rhs: String,
+}
+
+impl Var {
+    pub fn new(vt: VarType, val: &str) -> Self {
+        Var {
+            lhs: vt,
+            rhs: val.to_owned()
+        }
+    }
 }
 
 #[derive(PartialEq, Hash, Eq, Debug)]
@@ -67,15 +66,11 @@ pub enum VarType {
 }
 
 
-
-//#[derive(Debug)]
 pub struct Command {
     pub time:   Time,
     pub act:    Action,
-    //pub url:    String,
 }
 
-//#[derive(Debug)]
 pub struct Action {
     pub url:        String,
     pub contact:    Contact,
@@ -88,7 +83,6 @@ pub enum Contact {
     LogAll,
 }
 
-//#[derive(Debug)]
 pub struct Time {
     pub minute:     Entry,
     pub hour:       Entry,

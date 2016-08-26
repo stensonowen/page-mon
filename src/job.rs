@@ -24,13 +24,8 @@
  * `job.rs` defines the structure that is stored
  */
 
-
-//use parse::ast;//::Contact;
 use parse;
-//use event::calendar::ValidSet;
-use event::calendar;//::Calendar;
-//use parse::Vars;
-//use action::Action;
+use event::calendar;
 use action;
 
 extern crate hyper;
@@ -43,7 +38,6 @@ use std::path::Path;
 pub struct Job {
     time:   calendar::Calendar,
     pub url:    hyper::Url,
-    //via:    Contact,    //the one above, NOT the one in ast.rs
     via:    action::Action,
 }
 //TODO: should `job` store just `Contact` type and assume all data 
@@ -62,11 +56,6 @@ impl Job {
         let contact = try!(action::Action::extrapolate(cmd.act.contact, vars));
         Ok(Job { time: cal, url: url, via: contact })
     }
-    //pub fn time_to_fire(&self, timestamp: &DateTime<Local>) -> bool {
-    //    //wrapper around Calendar functionality to determine if "now" is 
-    //    //a "valid" minute
-    //    self.time.fire_now(timestamp)
-    //}
     pub fn fire_if_match(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
         //wraps Calendar::fire_now
         if self.time.fire_now(timestamp) {
