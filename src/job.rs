@@ -64,8 +64,11 @@ impl Job {
             Ok(())
         }
     }
+    pub fn matches_time(&self, timestamp: &DateTime<Local>) -> bool {
+        self.time.fire_now(timestamp)
+    }
 
-    fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+    pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
         //Do this in a different order so at most one Error is returned
         // 1. get page contents
         // 2. open cache contents

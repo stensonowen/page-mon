@@ -85,7 +85,12 @@ Text: &'input str = {
 //Directory pattern: must be absolute path
 //I guess this means Windows is out
 //Or `Text` could just be used for Dir
-Dir = r#""/.*""#;
+//But directories get special characters
+//fixed: also needs to omit first & last chars (`"`)
+//Dir = r#""/.*""#;
+Dir: &'input str = {
+    <d:r#""/.*""#> => &d[1..d.len()-1],
+};
 
 
 pub Command: ast::Command = {

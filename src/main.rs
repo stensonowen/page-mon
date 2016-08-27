@@ -36,29 +36,35 @@ use std::{thread,time};
 extern crate chrono;
 use chrono::{DateTime,Local,Duration,Timelike};
 
+const LOG_FILE: &'static str = "/home/owen/page-mon/log";
+//const CFG_FILE: &'static str = "/home/owen/page-mon/config_";
+const CFG_FILE: &'static str = "/home/owen/shared/code/rust/page-mon/config";
+
 fn main() {
-    //TODO: replace strs with constants
     //TODO: start threads for each tasks
     //TODO: replace vec with map to futures?
-    let input_file = Path::new("/home/owen/page-mon/config_");
-    //let input_file = Path::new("/home/pi/page-mon/config");
-    //let cache_path = "/var/cache/page-mon_cache";
-    //TODO: make dir if absent
-    let cache_path = "/tmp/page-mon_cache";
-    //let cache_path = "/home/pi/page-mon/cache";
-    assert!(input_file.is_file());
-    if Path::new(cache_path).is_dir() == false {
-        DirBuilder::new().recursive(true).create(cache_path).unwrap();
-    }
-    assert!(Path::new(cache_path).is_dir());
+    
+    let config = Path::new(CFG_FILE);
 
-    let (cmds, vars) = parse::parse(input_file).unwrap();
-    let jobs: Vec<job::Job> = cmds.into_iter().map(|c| job::Job::from(c, &vars).unwrap()).collect();
+    //parse input; panic if parsing fails
+    let (cmds, vars) = match parse::parse(config) {
+        Ok((c,v)) => (c,v),
+        Err(e)    => panic!(e.join("\n")),
+    };
     //panic! if a job is invalid
+    let jobs: Vec<job::Job> = cmds.into_iter()
+                                  .map(|c| job::Job::from(c, &vars).unwrap())
+                                  .collect();
+    
+    //create cache directory if it's not there
+    let cache_path = parse::get_dir(&vars).expect("No `DIR` variable set in config");
+    if Path::new(cache_path).is_dir() == false {
+        DirBuilder::new().recursive(true).create(cache_path).expect("Failed to create cache dir");
+    }
+    println!("Cache path: {:?}", cache_path);
     
     let mut now = Local::now();
     thread::sleep(time_to_next_minute(&now));
-
 
     loop {
         //iterate through the jobs, executing those for which it is time
@@ -68,6 +74,7 @@ fn main() {
                 println!("Error in job {}: `{}`", j.url, e);
             }
         }
+        println!("\t{}", now);
         now = Local::now();
         thread::sleep(time_to_next_minute(&now));
     }

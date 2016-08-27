@@ -40,6 +40,11 @@ use self::ast::{Var,VarType};
 
 pub type Vars = HashMap<VarType,String>;
 
+pub fn get_dir(vars: &Vars) -> Option<&String> {
+    //wrapper to fetch `DIR` value from variables
+    //so that `main.rs` or something
+    vars.get(&VarType::Dir)
+}
 
 //pub fn parse(input: String) {
 pub fn parse(input: &Path) -> Result<(Vec<ast::Command>,Vars),Vec<String>> {
