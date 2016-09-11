@@ -33,8 +33,9 @@ extern crate chrono;
 use self::chrono::{DateTime,Local};
 
 use std::path::Path;
+use std::hash::{Hash, Hasher, SipHasher};
 
-
+#[derive(Hash)]
 pub struct Job {
     time:   calendar::Calendar,
     pub url:    hyper::Url,
@@ -77,7 +78,8 @@ impl Job {
         // 5. update the cache
         //NOTE: some functions return Ok(Data), which might occasionally be helpful
         // for logging purposes but which we ignore here
-        let filename = action::url_to_file(&self.url);
+        //let filename = action::url_to_file(&self.url);
+        let filename = self.filename();
         let path = Path::new(dir).join(filename);
         let mut cache = String::new();
         let mut html  = String::new();
@@ -113,5 +115,32 @@ impl Job {
             Err(e) => Err(format!("Failed to contact user: {}", e))
         }
     }
+
+    pub fn filename(&self) -> String {
+        //hash self to get unique filename
+        let suffix = ".cache";
+
+        let mut prefix = {
+            if let (Some(s), Some(d)) = (self.url.path_segments(), self.url.domain()) {
+                let mut sum = d.to_owned();
+                sum.push('~');
+                s.into_iter().fold(sum, |mut acc, part| {acc.push_str(part); acc})
+            } else {
+                self.url.as_str().replace("/", "_")
+            }
+        };
+
+        let mut hasher = SipHasher::new();
+        self.hash(&mut hasher);
+        let hash = hasher.finish();
+        let uid = format!("{:09}", hash % 1_000_000_000);
+
+        prefix.push('~');
+        prefix.push_str(&uid);
+        prefix.push_str(suffix);
+        prefix
+
+    }
 }
+
 

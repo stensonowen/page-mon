@@ -38,7 +38,7 @@ const WEEKDAY_RANGE:ops::Range<u8> = 0.. 8;
 
 pub type ValidSet = BTreeSet<u8>;
 
-#[derive(Debug)]
+#[derive(Debug, Hash)]
 pub struct Calendar {
     mn:     ValidSet,
     hr:     ValidSet,

@@ -46,6 +46,7 @@ const PUSHJET_PRIORITY: u8 = 3;
 /* Define the 'Action' type, which stores contact info and metadata
  */
 
+#[derive(Hash)]
 pub enum Action {
     //New form of `ast::Contact` that includes the values it depends on
     //Makes it harder for a un-definition to slip through the cracks
@@ -158,7 +159,7 @@ impl Action {
 
 
 
-pub fn url_to_file(url: &hyper::Url) -> String {
+/*pub fn url_to_file(url: &hyper::Url) -> String {
     //try to make descriptive name out of url to use for file cache
     //can't just use the domain, because there could be collisions
     //if we can't, just use the url itself (without the forward slashes)
@@ -188,5 +189,5 @@ pub fn url_to_file(url: &hyper::Url) -> String {
     prefix.push_str(&uid);
     prefix.push_str(suffix);
     prefix
-}
+}*/
 

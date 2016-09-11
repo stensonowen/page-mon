@@ -43,6 +43,8 @@ const DIFF_THRESHOLD: usize = 10_000;
  *   * Add smarter way to decide whether to decompose or diff the whole thing
  *      e.g. JSON
  *   * Add more relevant html tags?
+ *   * use git instead of manual diffing
+ *      git diff _ _ --no-color --word-diff
  */  
 
 
