@@ -27,6 +27,7 @@
 use parse;
 use event::calendar;
 use action;
+use git::Repo;
 
 extern crate hyper;
 extern crate chrono;
@@ -34,6 +35,7 @@ use self::chrono::{DateTime,Local};
 
 use std::path::Path;
 use std::hash::{Hash, Hasher, SipHasher};
+use std::error::Error;
 
 #[derive(Hash)]
 pub struct Job {
@@ -69,51 +71,65 @@ impl Job {
         self.time.fire_now(timestamp)
     }
 
-    pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+    //pub fn fire(&self, dir: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
+    pub fn fire(&self, repo_path: &str, timestamp: &DateTime<Local>) -> Result<(),String> {
         //Do this in a different order so at most one Error is returned
-        // 1. get page contents
-        // 2. open cache contents
-        // 3. diff them
-        // 4. contact the user
-        // 5. update the cache
+        //0. open the repo (and fetch oid)
+        //1. save page contents to a file
+        //2. add the file to the repo
+        //3. commit the file to the repo (and fetch new oid)
+        //4. diff the file with the saved version
         //NOTE: some functions return Ok(Data), which might occasionally be helpful
         // for logging purposes but which we ignore here
         //let filename = action::url_to_file(&self.url);
         let filename = self.filename();
-        let path = Path::new(dir).join(filename);
-        let mut cache = String::new();
-        let mut html  = String::new();
+        //let path = Path::new(repo_path).join(filename);
+        //open repo
+        let repo = match Repo::open(repo_path) {
+            Ok(r)  => r,
+            Err(e) => return Err(format!("Failed to open git repo: {}", e.description()))
+        };
+        //and get its oid
+        let oid_old = match repo.get_oid() {
+            Ok(o)  => o,
+            Err(e) => return Err(format!("Failed to get oid: {}", e.description()))
+        };
 
-        //if `get_cache` fails, we assume there is no cache and this is the first run
-        //TODO: maybe rework this so an error is handles?
-        //      or so get_cache doesn't return a result?
-        action::scrape::get_cache(&path, &mut cache);
-
-        if let Err(e) = action::scrape::get_url(&self.url, &mut html) {
+        if let Err(e) = action::scrape::fetch_page(&self.url, &filename) {
             //nothing to update if there's no new info
-            return Err(format!("Failed to download page: {}", e));
+            return Err(format!("Failed to get/save page: {}", e))
         }
 
-        //update the cache
-        if let Err(e) = self.via.log(&path, &html, timestamp) {
-            //if the cache cannot be updated there's something pretty wrong
-            //there's also a chance our info is screwed up
-            //not returning here though would be problematic, as we want to
-            // complain that the cache couldn't be updated, but there could be
-            // other errors below; we'd have to return a Vec<String>
-            return Err(format!("Failed to update cache: {}", e));
+        if let Err(e) = repo.add_file(&filename) {
+            return Err(format!("Failed to add page to repo: {}", e.description()));
         }
+        
+        let commit_msg = format!("Updated '{}' at {}", filename, timestamp);
+        let oid_new = match repo.commit(&commit_msg, oid_old) {
+            Ok(o)  => o,
+            Err(e) => return Err(format!("Failed to commit to repo: {}", e.description()))
+        };
 
-        //if everything above has worked, 
-        let diff = action::scrape::diff(&cache, &html);
-        if diff.is_empty() {
-            return Ok(());
-        }
-        //send the message and return the result
+        let diff = match repo.diff(oid_old, oid_new) {
+            Ok(d)  => d,
+            Err(e) => return Err(format!("Failed to diff files: {}", e.description()))
+        };
+
         match self.via.contact(&self.url, &diff, timestamp) {
             Ok(_)  => Ok(()),
             Err(e) => Err(format!("Failed to contact user: {}", e))
         }
+        //if everything above has worked, 
+        //let diff = action::scrape::diff(&cache, &html);
+        //if diff.is_empty() {
+        //    return Ok(());
+        //}
+        //send the message and return the result
+        //Ok(())
+        //match self.via.contact(&self.url, &diff, timestamp) {
+        //    Ok(_)  => Ok(()),
+        //    Err(e) => Err(format!("Failed to contact user: {}", e))
+        //}
     }
 
     pub fn filename(&self) -> String {

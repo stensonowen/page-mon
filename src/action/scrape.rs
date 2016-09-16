@@ -25,7 +25,7 @@ extern crate select;
 
 use std::fs::File;
 use std::error::Error;
-use std::io::Read;
+use std::io::{Write, Read};
 use std::path::PathBuf;
 
 use self::hyper::header::*;
@@ -48,7 +48,7 @@ const DIFF_THRESHOLD: usize = 10_000;
  */  
 
 
-fn rhs_of_diff(l: &str, r: &str) -> String {
+/*fn rhs_of_diff_(l: &str, r: &str) -> String {
     //`diff` `l` and `r`, and append all the unique parts of `r` 
     // to `buffer`
     //TODO: maybe include context? A dozen characters before/after?
@@ -66,9 +66,9 @@ fn rhs_of_diff(l: &str, r: &str) -> String {
         }
     }
     rhs
-}
+}*/
 
-fn decompose_and_diff(old: &str, new: &str) -> String {
+/*fn decompose_and_diff_(old: &str, new: &str) -> String {
     //use html5ever to extract text, then only diff the content
     //shouldn't care about (certain) formatting or javascript
     //only use content tags like `p`, `hN`, ... ?
@@ -95,9 +95,9 @@ fn decompose_and_diff(old: &str, new: &str) -> String {
         }
     }
     diff
-}
+}*/
 
-pub fn diff(old: &str, new: &str) -> String {
+/*pub fn diff_(old: &str, new: &str) -> String {
     //master differ
     //decide which diff fn to use and use it
     //TODO: better way to decide which way to diff
@@ -106,7 +106,7 @@ pub fn diff(old: &str, new: &str) -> String {
         false => rhs_of_diff,
     };
     diff_fn(&old, &new)
-}
+}*/
 
 /* NOTE:
  *  Should `get_cache` and `get_url` be public? Or wrapped?
@@ -114,7 +114,7 @@ pub fn diff(old: &str, new: &str) -> String {
  *   so a wrapper would have to return a tuple of results or something
  */
 
-pub fn get_cache(filename: &PathBuf, buffer: &mut String) -> Result<usize,String> {
+/*pub fn get_cache_(filename: &PathBuf, buffer: &mut String) -> Result<usize,String> {
     //open cached version of a page. Return the html or an error message
     //let filename = url_to_str(url);
     let mut file = match File::open(filename) {
@@ -125,9 +125,43 @@ pub fn get_cache(filename: &PathBuf, buffer: &mut String) -> Result<usize,String
         Err(e) => Err(format!("File open error: {}", e.description())), 
         Ok(_)  => Ok(buffer.len()),
     }
+}*/
+
+pub fn fetch_page(url: &hyper::Url, filename: &str) -> Result<usize,String> {
+    //perform GET request on url and write it to a file or return an error message
+    let client = hyper::Client::new();
+    let mut headers = Headers::new();
+    //TODO: learn more about headers
+    //Accept?
+    //Accept-Language?
+    //Accept-Encoding?
+    //Connection keep-alive?
+    headers.set(UserAgent(USER_AGENT.to_string()));
+    let req = client.get(url.clone())
+                    .headers(headers)
+                    .send();
+
+    let mut file = match File::create(filename) {
+        Ok(f) => f,
+        Err(e) => return Err(format!("Failed to create file: {}", e.description())),
+    };
+
+    let mut res = match req {
+        Ok(r)  => r,
+        Err(e) => return Err(format!("Request error: {}", e.description())),
+    };
+    let mut buffer = String::new();
+    let res = res.read_to_string(&mut buffer);
+    //let mut buffer = Vec::<u8>::new();
+    //let res = r.read_to_end(&mut buffer);
+    match file.write(buffer.as_bytes()) {
+        Ok(l)  => Ok(l),
+        Err(e) => Err(format!("Failed to write to file: {}", e.description())),
+    }
 }
 
-pub fn get_url(url: &hyper::Url, buffer: &mut String) -> Result<usize,String> {
+
+/*pub fn get_url_(url: &hyper::Url, buffer: &mut String) -> Result<usize,String> {
     //perform GET request on url. Return the html or an error message
     let client = hyper::Client::new();
     let mut headers = Headers::new();
@@ -151,5 +185,5 @@ pub fn get_url(url: &hyper::Url, buffer: &mut String) -> Result<usize,String> {
             }
         }
     }
-}
+}*/
 
