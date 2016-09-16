@@ -24,6 +24,13 @@
  * NOTE: future default location: /var/cache
  */
 
+/* TODO list:
+ *  * Use futures to spawn jobs (and figure out how that works with git repos
+ *  * Fix email
+ *  * Enable logging of variable verbosity
+ */
+
+
 mod parse;
 mod event;
 mod job;
