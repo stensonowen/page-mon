@@ -26,7 +26,7 @@ extern crate select;
 use std::fs::File;
 use std::error::Error;
 use std::io::{Write, Read};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use self::hyper::header::*;
 use self::select::predicate::Name;
@@ -127,7 +127,7 @@ const DIFF_THRESHOLD: usize = 10_000;
     }
 }*/
 
-pub fn fetch_page(url: &hyper::Url, filename: &str) -> Result<usize,String> {
+pub fn fetch_page(url: &hyper::Url, filepath: &Path) -> Result<usize,String> {
     //perform GET request on url and write it to a file or return an error message
     let client = hyper::Client::new();
     let mut headers = Headers::new();
@@ -141,7 +141,7 @@ pub fn fetch_page(url: &hyper::Url, filename: &str) -> Result<usize,String> {
                     .headers(headers)
                     .send();
 
-    let mut file = match File::create(filename) {
+    let mut file = match File::create(filepath) {
         Ok(f) => f,
         Err(e) => return Err(format!("Failed to create file: {}", e.description())),
     };

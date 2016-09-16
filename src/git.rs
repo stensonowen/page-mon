@@ -49,9 +49,14 @@ impl Repo {
     pub fn get_oid(&self) -> Result<git2::Oid, git2::Error> {
         self.repo.refname_to_id("HEAD")
     }
-	pub fn add_file(&self, file: &str) -> Result<(), git2::Error> {
+	pub fn add_file(&self, file: &Path) -> Result<(), git2::Error> {
+        //adding from the full path seems finnicky?
 		let mut index = try!(self.repo.index());
-		try!(index.add_path(Path::new(file)));
+		//try!(index.add_path(Path::new(file)));
+		try!(index.add_path(file));
+		//try!(index.add_path(filepath));
+		//try!(index.add_path(Path::new(filepath.file_name().unwrap())));
+		//try!(index.add_path(Path::new(filepath.file_name().unwrap())));
 		index.write()
 	}
 	pub fn commit(&self, msg: &str, parent: git2::Oid) -> Result<git2::Oid, git2::Error> {

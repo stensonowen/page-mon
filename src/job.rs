@@ -83,7 +83,8 @@ impl Job {
         // for logging purposes but which we ignore here
         //let filename = action::url_to_file(&self.url);
         let filename = self.filename();
-        //let path = Path::new(repo_path).join(filename);
+        //let path_rel = Path::new(&filename);
+        let path_abs = Path::new(repo_path).join(filename.clone());
         //open repo
         let repo = match Repo::open(repo_path) {
             Ok(r)  => r,
@@ -95,12 +96,12 @@ impl Job {
             Err(e) => return Err(format!("Failed to get oid: {}", e.description()))
         };
 
-        if let Err(e) = action::scrape::fetch_page(&self.url, &filename) {
+        if let Err(e) = action::scrape::fetch_page(&self.url, path_abs.as_path()) {
             //nothing to update if there's no new info
             return Err(format!("Failed to get/save page: {}", e))
         }
 
-        if let Err(e) = repo.add_file(&filename) {
+        if let Err(e) = repo.add_file(Path::new(&filename)) {
             return Err(format!("Failed to add page to repo: {}", e.description()));
         }
         

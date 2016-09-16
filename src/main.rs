@@ -28,6 +28,7 @@ mod parse;
 mod event;
 mod job;
 mod action;
+mod git;
 
 use std::path::Path;
 use std::fs::DirBuilder;
@@ -91,3 +92,4 @@ fn time_to_next_minute(last_run: &DateTime<Local>) -> time::Duration {
     //DateTime::second() should never exceed 60, right?
     Duration::seconds(60i64 - sec).to_std().unwrap()
 }
+

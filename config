@@ -11,7 +11,9 @@
 #Set contact/storage variables
 #Variable names are case insensitive
 #`dir` is the only variable that is necessary
+#DIR = "/var/cache/page-mon_log"    //`Permission denied :/ `
 DIR = "/var/cache/page-mon_log"
+DIR = "/home/owen/page-mon/cache"
 #`email` and `secret` are only necessary if they're used
 email_domain = "lorem.ipsum"
 email_secret = "0123456789abcdef0123456789abcdef"
@@ -26,8 +28,8 @@ pushjet_secret = "0123456789abcdef0123456789abcdef"
 #*****https://stallman.org/ -> text
 #*****https://www.random.org/integers/?num=100&min=1&max=100&col=5&base=10&format=html&rnd=new -> text
 ***** https://api.twitch.tv/kraken/channels/truktruk -> text
-***** https://api.twitch.tv/kraken/channels/teamfortresstv -> text
-***** https://www.api.twitch.tv/kraken/channels/teamfortresstv -> append
+#***** https://api.twitch.tv/kraken/channels/teamfortresstv
+***** https://api.twitch.tv/kraken/channels/teamfortresstv -> append
 
 
 
